@@ -55,8 +55,34 @@ with tabs[1]:
 
 with tabs[2]:
     st.subheader("📝 Document Summarizer")
-    st.text_area("Paste text to summarize")
-    st.button("Summarize")
+
+    st.markdown("### ➕ Option 1: Paste text to summarize")
+    pasted_text = st.text_area("Paste text here")
+    if st.button("Summarize Pasted Text"):
+        if pasted_text.strip():
+            st.success("✅ Summarizing pasted text...")
+            # Replace with actual summary logic
+            st.write(f"**Summary:** {pasted_text[:100]}... (summary placeholder)")
+        else:
+            st.warning("Please paste some text.")
+
+    st.markdown("---")
+    st.markdown("### ➕ Option 2: Upload a PDF and choose pages")
+
+    uploaded_pdf = st.file_uploader("Upload a PDF file", type=["pdf"])
+    page_option = st.radio("What do you want to summarize?", ["Whole document", "Select pages"])
+
+    page_range = ""
+    if page_option == "Select pages":
+        page_range = st.text_input("Enter pages to summarize (e.g., 1-3,5)")
+
+    if st.button("Summarize PDF"):
+        if uploaded_pdf:
+            st.success("✅ PDF uploaded. (Summary logic coming next...)")
+            # Placeholder logic — this is where we'll read the file next
+            st.write(f"Summary from: `{uploaded_pdf.name}` — Pages: {page_range or 'All'}")
+        else:
+            st.warning("Please upload a PDF file first.")
 
 with tabs[3]:
     st.info("Stay tuned for more tools here!")

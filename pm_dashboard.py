@@ -94,14 +94,18 @@ with tabs[2]:
         else:
             st.warning("Please upload a PDF file first.")
 
+import pdfplumber
+
 with tabs[3]:
     st.subheader("📂 Contract Parsing – Payment Terms (Offline Mode)")
 
     uploaded_pdf = st.file_uploader("Upload a contract PDF", type=["pdf"])
 
     if uploaded_pdf:
-        with fitz.open(stream=uploaded_pdf.read(), filetype="pdf") as doc:
-            all_text = "\n".join(page.get_text() for page in doc)
+        with pdfplumber.open(uploaded_pdf) as pdf:
+            all_text = ""
+            for page in pdf.pages:
+                all_text += page.extract_text() + "\n"
 
         st.success("✅ PDF uploaded and text extracted.")
 
@@ -124,6 +128,7 @@ with tabs[3]:
                         st.write(section)
             else:
                 st.warning("❗ No payment-related sections found. Try a different file or add more keywords.")
+
 
 with tabs[4]:
     st.info("🚧 Stay tuned for more tools here!")

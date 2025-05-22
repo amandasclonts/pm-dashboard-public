@@ -1,12 +1,6 @@
 import streamlit as st
 import base64
-
-# ✅ TEMP check for fitz/PyMuPDF
-try:
-    import fitz
-    st.success("✅ fitz (PyMuPDF) is installed and ready.")
-except ModuleNotFoundError:
-    st.error("❌ fitz module is NOT installed.")
+import pdfplumber
 
 st.set_page_config(page_title="AI Dashboard", layout="wide")
 
@@ -94,7 +88,6 @@ with tabs[2]:
         else:
             st.warning("Please upload a PDF file first.")
 
-import pdfplumber
 
 with tabs[3]:
     st.subheader("📂 Contract Parsing – Payment Terms (Offline Mode)")

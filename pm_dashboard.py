@@ -90,9 +90,22 @@ with tabs[2]:
 
 
 with tabs[3]:
-    st.subheader("📂 Contract Parsing – Payment Terms (Offline Mode)")
+    st.subheader("📂 Contract Parsing – Section Lookup (Offline Mode)")
 
     uploaded_pdf = st.file_uploader("Upload a contract PDF", type=["pdf"])
+
+    topic_keywords = {
+        "Liquidated Damages": ["liquidated damages", "penalty", "delay charge"],
+        "Payment Terms": ["payment terms", "billing", "invoicing", "retention", "progress payment"],
+        "Delays": ["delays", "extension of time", "force majeure", "lateness"],
+        "Retention": ["retention", "retainage", "withheld", "held payment"],
+        "Schedule": ["schedule", "completion date", "milestone", "timeline"],
+        "Scope of Work": ["scope of work", "services to be performed", "work included", "deliverables"],
+        "Contract Value": ["contract value", "contract amount", "total cost", "lump sum", "$"],
+        "Safety Requirements": ["safety", "osha", "ppe", "jobsite safety", "training"]
+    }
+
+    topic = st.selectbox("Choose a contract topic to analyze:", list(topic_keywords.keys()))
 
     if uploaded_pdf:
         with pdfplumber.open(uploaded_pdf) as pdf:
@@ -102,25 +115,25 @@ with tabs[3]:
 
         st.success("✅ PDF uploaded and text extracted.")
 
-        keywords = ["payment terms", "billing", "retention", "invoicing", "progress payment", "application for payment"]
-
-        if st.button("Find Payment Terms"):
+        if st.button("Find Selected Section"):
+            keywords = topic_keywords[topic]
             found_sections = []
             lines = all_text.split("\n")
+
             for i, line in enumerate(lines):
                 for keyword in keywords:
-                    if keyword in line.lower():
+                    if keyword.lower() in line.lower():
                         snippet = "\n".join(lines[max(i - 2, 0): i + 3])
                         found_sections.append(snippet)
                         break
 
             if found_sections:
-                st.markdown("### 🔍 Found the following mentions of Payment Terms:")
+                st.markdown(f"### 🔍 Found the following matches for **{topic}**:")
                 for idx, section in enumerate(found_sections):
                     with st.expander(f"Match {idx+1}"):
                         st.write(section)
             else:
-                st.warning("❗ No payment-related sections found. Try a different file or add more keywords.")
+                st.warning(f"No matches found for **{topic}**.")
 
 
 with tabs[4]:

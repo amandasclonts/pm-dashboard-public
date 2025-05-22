@@ -6,7 +6,7 @@ st.set_page_config(page_title="AI Dashboard", layout="wide")
 # --- Simple Password Gate ---
 def check_password():
     def password_entered():
-        if st.session_state["password"] == "Wbg3033!":  # 👈 Change this!
+        if st.session_state["password"] == "Wbg3033!": 
             st.session_state["password_correct"] = True
             del st.session_state["password"]
         else:
@@ -53,7 +53,40 @@ with tabs[1]:
     st.file_uploader("Upload civil plan PDF", type=["pdf"])
     st.button("Check Compliance")
 
+import fitz  # PyMuPDF
+
 with tabs[2]:
+    st.subheader("📝 Contract Analyzer – Payment Terms (Offline Mode)")
+
+    uploaded_pdf = st.file_uploader("Upload a contract PDF", type=["pdf"])
+
+    if uploaded_pdf:
+        with fitz.open(stream=uploaded_pdf.read(), filetype="pdf") as doc:
+            all_text = "\n".join(page.get_text() for page in doc)
+
+        st.success("✅ PDF uploaded and text extracted.")
+
+        keywords = ["payment terms", "billing", "retention", "invoicing", "progress payment", "application for payment"]
+
+        if st.button("Find Payment Terms"):
+            found_sections = []
+            lines = all_text.split("\n")
+            for i, line in enumerate(lines):
+                for keyword in keywords:
+                    if keyword in line.lower():
+                        snippet = "\n".join(lines[max(i - 2, 0): i + 3])
+                        found_sections.append(snippet)
+                        break
+
+            if found_sections:
+                st.markdown("### 🔍 Found the following mentions of Payment Terms:")
+                for idx, section in enumerate(found_sections):
+                    with st.expander(f"Match {idx+1}"):
+                        st.write(section)
+            else:
+                st.warning("❗ No payment-related sections found. Try a different file or add more keywords.")
+
+with tabs[3]:
     st.subheader("📝 Document Summarizer")
 
     st.markdown("### ➕ Option 1: Paste text to summarize")
@@ -84,5 +117,5 @@ with tabs[2]:
         else:
             st.warning("Please upload a PDF file first.")
 
-with tabs[3]:
+with tabs[4]:
     st.info("Stay tuned for more tools here!")

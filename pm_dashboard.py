@@ -158,8 +158,8 @@ Section Text:
             summary = response.choices[0].message.content
             st.markdown("### 🤖 AI Summary")
             st.write(summary)
-else:
-    st.warning(f"No matches found for **{topic}**.")
+    else:
+        st.warning(f"No matches found for **{topic}**.")
 
 
 with tabs[4]:

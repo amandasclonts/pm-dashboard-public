@@ -94,7 +94,7 @@ with tabs[2]:
 
 
 with tabs[3]:
-    st.subheader("📂 Contract Parsing – Section Lookup (Offline Mode)")
+    st.subheader("📂 Contract Parsing – Section Lookup (Offline + AI Mode)")
 
     uploaded_pdf = st.file_uploader("Upload a contract PDF", type=["pdf"])
 
@@ -119,7 +119,7 @@ with tabs[3]:
 
         st.success("✅ PDF uploaded and text extracted.")
 
-            if st.button("Find Selected Section"):
+        if st.button("Find Selected Section"):
             keywords = topic_keywords[topic]
             found_sections = []
             lines = all_text.split("\n")

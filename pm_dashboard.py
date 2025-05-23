@@ -1,6 +1,10 @@
 import streamlit as st
 import base64
 import pdfplumber
+import openai
+
+openai.api_base = "https://openrouter.ai/api/v1"
+openai.api_key = "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"
 
 st.set_page_config(page_title="AI Dashboard", layout="wide")
 
@@ -127,11 +131,34 @@ with tabs[3]:
                         found_sections.append(snippet)
                         break
 
-            if found_sections:
-                st.markdown(f"### 🔍 Found the following matches for **{topic}**:")
-                for idx, section in enumerate(found_sections):
-                    with st.expander(f"Match {idx+1}"):
-                        st.write(section)
+    if found_sections:
+        st.markdown(f"### 🔍 Found the following matches for **{topic}**:")
+        for idx, section in enumerate(found_sections):
+            with st.expander(f"Match {idx+1}"):
+                st.write(section)
+
+        if st.button("Summarize With AI"):
+            with st.spinner("Contacting OpenRouter..."):
+                prompt = f"""
+You are a contract analysis assistant. Summarize the following section from the contract.
+Topic: {topic}
+Section Text:
+{found_sections[0]}
+"""
+
+            response = openai.ChatCompletion.create(
+                model="openchat/openchat-3.5-0106",  # or another OpenRouter-supported model
+                messages=[
+                    {"role": "system", "content": "You summarize and extract details from contracts."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.4
+            )
+
+            summary = response.choices[0].message.content
+            st.markdown("### 🤖 AI Summary")
+            st.write(summary)
+
             else:
                 st.warning(f"No matches found for **{topic}**.")
 

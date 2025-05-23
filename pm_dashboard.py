@@ -119,7 +119,7 @@ with tabs[3]:
 
         st.success("✅ PDF uploaded and text extracted.")
 
-        if st.button("Find Selected Section"):
+            if st.button("Find Selected Section"):
             keywords = topic_keywords[topic]
             found_sections = []
             lines = all_text.split("\n")
@@ -131,37 +131,34 @@ with tabs[3]:
                         found_sections.append(snippet)
                         break
 
-    if found_sections:
-        st.markdown(f"### 🔍 Found the following matches for **{topic}**:")
-        for idx, section in enumerate(found_sections):
-            with st.expander(f"Match {idx+1}"):
-                st.write(section)
+            if found_sections:
+                st.markdown(f"### 🔍 Found the following matches for **{topic}**:")
+                for idx, section in enumerate(found_sections):
+                    with st.expander(f"Match {idx+1}"):
+                        st.write(section)
 
-        if st.button("Summarize With AI"):
-            with st.spinner("Contacting OpenRouter..."):
-                prompt = f"""
+                if st.button("Summarize With AI"):
+                    with st.spinner("Contacting OpenRouter..."):
+                        prompt = f"""
 You are a contract analysis assistant. Summarize the following section from the contract.
 Topic: {topic}
 Section Text:
 {found_sections[0]}
 """
-
-            response = openai.ChatCompletion.create(
-                model="openchat/openchat-3.5-0106",  # or another OpenRouter-supported model
-                messages=[
-                    {"role": "system", "content": "You summarize and extract details from contracts."},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.4
-            )
-
-            summary = response.choices[0].message.content
-            st.markdown("### 🤖 AI Summary")
-            st.write(summary)
-    else:
-        st.warning(f"No matches found for **{topic}**.")
-
-
+                        response = openai.ChatCompletion.create(
+                            model="openchat/openchat-3.5-0106",
+                            messages=[
+                                {"role": "system", "content": "You summarize and extract details from contracts."},
+                                {"role": "user", "content": prompt}
+                            ],
+                            temperature=0.4
+                        )
+                        summary = response.choices[0].message.content
+                        st.markdown("### 🤖 AI Summary")
+                        st.write(summary)
+            else:
+                st.warning(f"No matches found for **{topic}**.")
+ 
 with tabs[4]:
     st.info("🚧 Stay tuned for more tools here!")
 

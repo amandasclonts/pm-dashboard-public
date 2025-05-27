@@ -93,7 +93,7 @@ with tabs[2]:
             st.warning("Please upload a PDF file first.")
 
 
-   with tabs[3]:
+with tabs[3]:
     st.subheader("📂 Contract Parsing – Section Lookup (AI Mode)")
 
     uploaded_pdf = st.file_uploader("Upload a contract PDF", type=["pdf"])

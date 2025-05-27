@@ -100,13 +100,13 @@ with tabs[3]:
 
     topic_keywords = {
         "Liquidated Damages": ["liquidated damages", "penalty", "delay charge"],
-        "Payment Terms": ["payment terms", "billing", "invoicing", "retention", "progress payment"],
-        "Delays": ["delays", "extension of time", "force majeure", "lateness"],
-        "Retention": ["retention", "retainage", "withheld", "held payment"],
-        "Schedule": ["schedule", "completion date", "milestone", "timeline"],
+        "Payment Terms": ["payment terms", "billing", "invoicing", "retention", "progress payment", "final payments"],
+        "Delays": ["delay", "extension of time", "force majeure", "lateness", "time", "schedule", "change order"],
+        "Retention": ["retention", "retainage", "withheld", "held payment", "deductible", "liability", "ocip", "ccip"],
+        "Schedule": ["schedule", "completion date", "milestone", "timeline", "progress schedule", "schedule of values", "project schedule"],
         "Scope of Work": ["scope of work", "services to be performed", "work included", "deliverables"],
-        "Contract Value": ["contract value", "contract amount", "total cost", "lump sum", "$"],
-        "Safety Requirements": ["safety", "osha", "ppe", "jobsite safety", "training"]
+        "Contract Value": ["subcontract amount", "subcontract work", "$"],
+        "Safety Requirements": ["safety", "osha", "ppe", "jobsite safety", "training", "safety program", "safety requirements]
     }
 
     topic = st.selectbox("Choose a contract topic to analyze:", list(topic_keywords.keys()))

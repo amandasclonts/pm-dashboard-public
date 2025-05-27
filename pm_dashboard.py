@@ -180,17 +180,17 @@ You are a contract analysis assistant. Summarize the following section(s) from a
 Section Text:
 {combined_text}
 """
-            response = openai.ChatCompletion.create(
-                model="openchat/openchat-3.5-0106",
-                messages=[
-                    {"role": "system", "content": "You summarize and extract details from contracts."},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.4
-            )
-            summary = response.choices[0].message.content
-            st.markdown("### 🤖 AI Summary")
-            st.write(summary)
+        response = openai.ChatCompletion.create(
+            model="openchat/openchat-3.5-0106",
+            messages=[
+                {"role": "system", "content": "You summarize and extract details from contracts."},
+                {"role": "user", "content": prompt}
+            ],
+             temperature=0.4
+        )
+        summary = response.choices[0].message.content
+        st.markdown("### 🤖 AI Summary")
+        st.write(summary)
 else:
     st.warning(f"No relevant sections found for **{topic}**.")
 

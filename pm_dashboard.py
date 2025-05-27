@@ -177,8 +177,8 @@ with tabs[3]:
         keywords = topic_keywords[topic]
 
         for para in paragraphs:
-            match_count = sum(kw in para.lower() for kw in keywords)
-            if match_count >= 1:  # Require at least 1 keyword
+            match_count = sum(f" {kw} " in f" {para.lower()} " for kw in keywords)
+            if match_count >= 2:
                 matches.append(para.strip())
 
         if matches:

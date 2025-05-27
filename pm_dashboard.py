@@ -101,67 +101,37 @@ with tabs[3]:
 
     topic_keywords = {
         "Liquidated Damages": [
-            "liquidated damages",
-            "delay penalty",
-            "late completion",
-            "damage fee"
+           "liquidated damages", "liquidated amount", "penalty", "late delivery", "delay damages"
         ],
         "Payment Terms": [
-            "payment terms",
-            "billing cycle",
-            "progress payment",
-            "final payment",
-            "retainage",
-            "paid upon receipt",
-            "AIA form",
-            "invoice submission"
+            "payment request", "payment terms", "billing", "invoice", "progress payments",
+            "final payment", "paid by owner", "schedule of values", "payment application"
         ],
         "Delays": [
-            "delay",
-            "extension of time",
-            "force majeure",
-            "project delay",
-            "completion deadline"
+            "delay", "extension of time", "force majeure", "project delay",
+            "weather delay", "change order", "completion timeline", "time is of the essence"
         ],
         "Retention": [
-            "retainage",
-            "withheld amount",
-            "retainage percentage",
-            "retained funds",
-            "10% retainage"
+            "retainage", "retained", "withheld", "10%", "retention", "retainage percentage"
         ],
         "Schedule": [
-            "schedule of work",
-            "completion schedule",
-            "work progress schedule",
-            "project timeline",
-            "schedule compliance"
+            "progress schedule", "completion date", "timeline", "schedule of work",
+            "project schedule", "construction timeline", "milestone"
         ],
         "Scope of Work": [
-            "scope of work",
-            "subcontractor's work",
-            "project scope",
-            "work authorization",
-            "drawings and specifications"
+            "scope of work", "subcontract work", "work includes", "services include",
+            "project scope", "work to be performed"
         ],
         "Contract Value": [
-            "contract price",
-            "subcontract amount",
-            "contract sum",
-            "total compensation",
-            "base bid",
-            "contract total"
+            "subcontract amount", "subcontract price", "contract value", "contract sum",
+            "contract total", "total compensation", "base bid", "amount to be paid"
         ],
         "Safety Requirements": [
-            "safety requirements",
-            "osha",
-            "jobsite safety",
-            "ppe",
-            "safety manual",
-            "safety program",
-            "injury prevention"
+            "safety", "osha", "jobsite safety", "ppe", "site safety", "safety training",
+            "safety program", "injury prevention"
         ]
     }
+
 
 
     topic = st.selectbox("Choose a contract topic to analyze:", list(topic_keywords.keys()))
@@ -178,7 +148,7 @@ with tabs[3]:
         keywords = topic_keywords[topic]
 
         for para in paragraphs:
-            match_count = sum(bool(re.search(rf"\b{re.escape(kw)}\b", para.lower())) for kw in keywords)
+            mmatch_count = sum(kw.lower() in para.lower() for kw in keywords)
             if match_count >= 2:
                 matches.append(para.strip())
 

@@ -124,7 +124,7 @@ with tabs[3]:
         ],
         "Contract Value": [
             "subcontract amount", "subcontract price", "contract value", "contract sum",
-            "contract total", "total compensation", "base bid", "amount to be paid"
+            "contract total", "total compensation", "base bid", "amount to be paid", "contractor agrees to pay subcontractor"
         ],
         "Safety Requirements": [
             "safety", "osha", "jobsite safety", "ppe", "site safety", "safety training",
@@ -151,6 +151,15 @@ with tabs[3]:
             match_count = sum(kw.lower() in para.lower() for kw in keywords)
             if match_count >= 2:
                 matches.append(para.strip())
+
+            if topic == "Contract Value":
+                match_threshold = 1
+            else:
+                match_threshold = 2
+    
+            if match_count >= match_threshold:
+                matches.append(para.strip())
+
 
         if matches:
             st.markdown(f"### 🔍 Found {len(matches)} section(s) related to **{topic}**:")

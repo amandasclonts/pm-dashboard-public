@@ -123,24 +123,32 @@ with tabs[3]:
 
         if st.button("Find Selected Section"):
             keywords = topic_keywords[topic]
-            matching_lines = []
             lines = all_text.split("\n")
+            sections = []
+            i = 0
 
-            for line in lines:
-                for keyword in keywords:
-                    if keyword.lower() in line.lower():
-                        matching_lines.append(line.strip())
-                        break
+            while i < len(lines):
+                line = lines[i].strip()
+                if any(keyword in line.lower() for keyword in keywords):
+                    # Collect paragraph
+                    paragraph = [line]
+                    i += 1
+                    while i < len(lines) and lines[i].strip() != "":
+                        paragraph.append(lines[i].strip())
+                        i += 1
+                    sections.append("\n".join(paragraph))
+                else:
+                    i += 1
 
-            combined_text = "\n".join(matching_lines)
-
-            if combined_text.strip():
-                st.markdown(f"### 🔍 Extracted Text for **{topic}**:")
-                with st.expander("Click to view extracted section"):
-                    st.write(combined_text)
+            if sections:
+                st.markdown(f"### 🔍 Found the following paragraphs for **{topic}**:")
+                for idx, section in enumerate(sections):
+                    with st.expander(f"Match {idx+1}"):
+                        st.write(section)
 
                 if st.button("Summarize With AI"):
                     with st.spinner("Contacting OpenRouter..."):
+                        combined_text = "\n\n".join(sections)
                         prompt = f"""
 You are a contract analysis assistant. Summarize the following section from the contract.
 Topic: {topic}
@@ -160,7 +168,6 @@ Section Text:
                         st.write(summary)
             else:
                 st.warning(f"No matches found for **{topic}**.")
-
  
 with tabs[4]:
     st.info("🚧 Stay tuned for more tools here!")

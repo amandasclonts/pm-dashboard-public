@@ -106,7 +106,7 @@ with tabs[3]:
         "Schedule": ["schedule", "completion date", "milestone", "timeline", "progress schedule", "schedule of values", "project schedule"],
         "Scope of Work": ["scope of work", "services to be performed", "work included", "deliverables"],
         "Contract Value": ["subcontract amount", "subcontract work", "$"],
-        "Safety Requirements": ["safety", "osha", "ppe", "jobsite safety", "training", "safety program", "safety requirements]
+        "Safety Requirements": ["safety", "osha", "ppe", "jobsite safety", "training", "safety program", "safety requirements"]
     }
 
     topic = st.selectbox("Choose a contract topic to analyze:", list(topic_keywords.keys()))

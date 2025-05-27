@@ -96,8 +96,8 @@ with tabs[3]:
         "Retention": ["retainage", "retained", "withheld", "10%", "retention", "retainage percentage"],
         "Schedule": ["progress schedule", "completion date", "timeline", "schedule of work", "project schedule", "construction timeline", "milestone"],
         "Scope of Work": ["scope of work", "subcontract work", "work includes", "services include", "project scope", "work to be performed"],
-        "Contract Value": ["contract price", "contract value", "contract sum", "contract total","total compensation", "subcontract amount", "subcontract price", "base bid",
-        "original subcontract sum", "subcontractor compensation", "contractor shall pay", "contractor agrees to pay", "agrees to pay subcontractor","shall pay to subcontractor"]
+        "Contract Value": ["contract price", "contract value", "contract sum", "contract total", "total compensation", "subcontract amount", "subcontract price", "base bid",
+        "original subcontract sum", "subcontractor compensation", "contractor shall pay", "contractor agrees to pay", "agrees to pay subcontractor", "shall pay to subcontractor"]
         "Safety Requirements": ["safety", "osha", "jobsite safety", "ppe", "site safety", "safety training", "safety program", "injury prevention"]
     }
 

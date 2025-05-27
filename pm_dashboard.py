@@ -185,7 +185,10 @@ with tabs[3]:
             st.markdown(f"### 🔍 Found {len(matches)} section(s) related to **{topic}**:")
             for idx, section in enumerate(matches):
                 with st.expander(f"Match {idx+1}"):
-                    st.write(section)
+                    st.markdown(
+                        f"<div style='overflow-x: auto; white-space: pre-wrap;'>{section}</div>",
+                        unsafe_allow_html=True
+                    )
 
             if st.button("Summarize All Matches with AI"):
                 with st.spinner("Contacting OpenRouter..."):

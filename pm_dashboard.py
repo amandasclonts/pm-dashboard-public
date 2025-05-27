@@ -144,21 +144,21 @@ with tabs[3]:
                 if text:
                     paragraphs.extend(text.split("\n\n"))  # split full page into blocks
 
-        matches = []
-        keywords = topic_keywords[topic]
+    matches = []
+    keywords = topic_keywords[topic]
+    exclusion_keywords = ["insurance", "deductible", "bond", "ocip", "bonding", "liability"]
 
-        for para in paragraphs:
-            match_count = sum(kw.lower() in para.lower() for kw in keywords)
-            if match_count >= 2:
-                matches.append(para.strip())
+    for i, para in enumerate(paragraphs):
+        para_lower = para.lower()
+        match_count = sum(kw.lower() in para_lower for kw in keywords)
+        has_exclusion = any(ex_kw in para_lower for ex_kw in exclusion_keywords)
 
-            if topic == "Contract Value":
-                match_threshold = 1
-            else:
-                match_threshold = 2
-    
-            if match_count >= match_threshold:
-                matches.append(para.strip())
+    if match_count >= 1 and not has_exclusion:
+        # Include 1 line below the match to grab associated contract sum
+        follow_up = paragraphs[i + 1] if i + 1 < len(paragraphs) else ""
+        full_block = f"{para.strip()}\n{follow_up.strip()}"
+        matches.append(full_block)
+
 
 
         if matches:

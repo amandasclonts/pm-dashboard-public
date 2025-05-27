@@ -93,82 +93,70 @@ with tabs[2]:
             st.warning("Please upload a PDF file first.")
 
 
-with tabs[3]:
-    st.subheader("📂 Contract Parsing – Section Lookup (Offline + AI Mode)")
+   with tabs[3]:
+    st.subheader("📂 Contract Parsing – Section Lookup (AI Mode)")
 
     uploaded_pdf = st.file_uploader("Upload a contract PDF", type=["pdf"])
 
     topic_keywords = {
         "Liquidated Damages": ["liquidated damages", "penalty", "delay charge"],
-        "Payment Terms": ["payment terms", "billing", "invoicing", "retention", "progress payment", "final payments"],
-        "Delays": ["delay", "extension of time", "force majeure", "lateness", "time", "schedule", "change order"],
-        "Retention": ["retention", "retainage", "withheld", "held payment", "deductible", "liability", "ocip", "ccip"],
-        "Schedule": ["schedule", "completion date", "milestone", "timeline", "progress schedule", "schedule of values", "project schedule"],
-        "Scope of Work": ["scope of work", "services to be performed", "work included", "deliverables"],
-        "Contract Value": ["subcontract amount", "subcontract work", "$"],
-        "Safety Requirements": ["safety", "osha", "ppe", "jobsite safety", "training", "safety program", "safety requirements"]
+        "Payment Terms": ["payment terms", "billing", "invoicing", "retention", "progress payment", "final payment"],
+        "Delays": ["delay", "extension of time", "force majeure", "lateness", "change order"],
+        "Retention": ["retention", "retainage", "withheld", "held payment", "ocip", "ccip"],
+        "Schedule": ["completion date", "milestone", "progress schedule", "timeline", "schedule of values"],
+        "Scope of Work": ["scope of work", "work included", "deliverables"],
+        "Contract Value": ["subcontract amount", "contract value", "total price" "$"],
+        "Safety Requirements": ["safety", "osha", "jobsite safety", "ppe", "hazard", "training"]
     }
 
     topic = st.selectbox("Choose a contract topic to analyze:", list(topic_keywords.keys()))
 
     if uploaded_pdf:
         with pdfplumber.open(uploaded_pdf) as pdf:
-            all_text = ""
+            paragraphs = []
             for page in pdf.pages:
                 text = page.extract_text()
                 if text:
-                    all_text += text + "\n"
+                    paragraphs.extend(text.split("\n\n"))  # split full page into blocks
 
-        st.success("✅ PDF uploaded and text extracted.")
+        matches = []
+        keywords = topic_keywords[topic]
 
-        if st.button("Find Selected Section"):
-            keywords = topic_keywords[topic]
-            lines = all_text.split("\n")
-            sections = []
-            i = 0
+        for para in paragraphs:
+            match_count = sum(kw in para.lower() for kw in keywords)
+            if match_count >= 1:  # Require at least 1 keyword
+                matches.append(para.strip())
 
-            while i < len(lines):
-                line = lines[i].strip()
-                if any(keyword in line.lower() for keyword in keywords):
-                    # Collect paragraph
-                    paragraph = [line]
-                    i += 1
-                    while i < len(lines) and lines[i].strip() != "":
-                        paragraph.append(lines[i].strip())
-                        i += 1
-                    sections.append("\n".join(paragraph))
-                else:
-                    i += 1
+        if matches:
+            st.markdown(f"### 🔍 Found {len(matches)} section(s) related to **{topic}**:")
+            for idx, section in enumerate(matches):
+                with st.expander(f"Match {idx+1}"):
+                    st.write(section)
 
-            if sections:
-                st.markdown(f"### 🔍 Found the following paragraphs for **{topic}**:")
-                for idx, section in enumerate(sections):
-                    with st.expander(f"Match {idx+1}"):
-                        st.write(section)
+            if st.button("Summarize All Matches with AI"):
+                with st.spinner("Contacting OpenRouter..."):
+                    combined_text = "\n\n".join(matches[:3])  # Limit to 3 to avoid token overflow
+                    prompt = f"""
+You are a contract analysis assistant. Summarize the following section(s) from a contract related to:
+**{topic}**
 
-                if st.button("Summarize With AI"):
-                    with st.spinner("Contacting OpenRouter..."):
-                        combined_text = "\n\n".join(sections)
-                        prompt = f"""
-You are a contract analysis assistant. Summarize the following section from the contract.
-Topic: {topic}
 Section Text:
 {combined_text}
 """
-                        response = openai.ChatCompletion.create(
-                            model="openchat/openchat-3.5-0106",
-                            messages=[
-                                {"role": "system", "content": "You summarize and extract details from contracts."},
-                                {"role": "user", "content": prompt}
-                            ],
-                            temperature=0.4
-                        )
-                        summary = response.choices[0].message.content
-                        st.markdown("### 🤖 AI Summary")
-                        st.write(summary)
-            else:
-                st.warning(f"No matches found for **{topic}**.")
- 
+                    response = openai.ChatCompletion.create(
+                        model="openchat/openchat-3.5-0106",
+                        messages=[
+                            {"role": "system", "content": "You summarize and extract details from contracts."},
+                            {"role": "user", "content": prompt}
+                        ],
+                        temperature=0.4
+                    )
+                    summary = response.choices[0].message.content
+                    st.markdown("### 🤖 AI Summary")
+                    st.write(summary)
+        else:
+            st.warning(f"No relevant sections found for **{topic}**.")
+
 with tabs[4]:
     st.info("🚧 Stay tuned for more tools here!")
 

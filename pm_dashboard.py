@@ -134,7 +134,7 @@ with tabs[3]:
     }
 
 
-     topic = st.selectbox("Choose a contract topic to analyze:", list(topic_keywords.keys()))
+    topic = st.selectbox("Choose a contract topic to analyze:", list(topic_keywords.keys()))
 
     if uploaded_pdf:
         with pdfplumber.open(uploaded_pdf) as pdf:

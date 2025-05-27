@@ -148,7 +148,7 @@ with tabs[3]:
         keywords = topic_keywords[topic]
 
         for para in paragraphs:
-            mmatch_count = sum(kw.lower() in para.lower() for kw in keywords)
+            match_count = sum(kw.lower() in para.lower() for kw in keywords)
             if match_count >= 2:
                 matches.append(para.strip())
 

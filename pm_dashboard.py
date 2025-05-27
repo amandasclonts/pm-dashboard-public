@@ -98,69 +98,69 @@ with tabs[3]:
 
     uploaded_pdf = st.file_uploader("Upload a contract PDF", type=["pdf"])
 
-topic_keywords = {
-    "Liquidated Damages": [
-        "liquidated damages",
-        "delay penalty",
-        "late completion",
-        "damage fee"
-    ],
-    "Payment Terms": [
-        "payment terms",
-        "billing cycle",
-        "progress payment",
-        "final payment",
-        "retainage",
-        "paid upon receipt",
-        "AIA form",
-        "invoice submission"
-    ],
-    "Delays": [
-        "delay",
-        "extension of time",
-        "force majeure",
-        "project delay",
-        "completion deadline"
-    ],
-    "Retention": [
-        "retainage",
-        "withheld amount",
-        "retainage percentage",
-        "retained funds",
-        "10% retainage"
-    ],
-    "Schedule": [
-        "schedule of work",
-        "completion schedule",
-        "work progress schedule",
-        "project timeline",
-        "schedule compliance"
-    ],
-    "Scope of Work": [
-        "scope of work",
-        "subcontractor's work",
-        "project scope",
-        "work authorization",
-        "drawings and specifications"
-    ],
-    "Contract Value": [
-        "contract price",
-        "subcontract amount",
-        "contract sum",
-        "total compensation",
-        "base bid",
-        "contract total"
-    ],
-    "Safety Requirements": [
-        "safety requirements",
-        "osha",
-        "jobsite safety",
-        "ppe",
-        "safety manual",
-        "safety program",
-        "injury prevention"
-    ]
-}
+    topic_keywords = {
+        "Liquidated Damages": [
+            "liquidated damages",
+            "delay penalty",
+            "late completion",
+            "damage fee"
+        ],
+        "Payment Terms": [
+            "payment terms",
+            "billing cycle",
+            "progress payment",
+            "final payment",
+            "retainage",
+            "paid upon receipt",
+            "AIA form",
+            "invoice submission"
+        ],
+        "Delays": [
+            "delay",
+            "extension of time",
+            "force majeure",
+            "project delay",
+            "completion deadline"
+        ],
+        "Retention": [
+            "retainage",
+            "withheld amount",
+            "retainage percentage",
+            "retained funds",
+            "10% retainage"
+        ],
+        "Schedule": [
+            "schedule of work",
+            "completion schedule",
+            "work progress schedule",
+            "project timeline",
+            "schedule compliance"
+        ],
+        "Scope of Work": [
+            "scope of work",
+            "subcontractor's work",
+            "project scope",
+            "work authorization",
+            "drawings and specifications"
+        ],
+        "Contract Value": [
+            "contract price",
+            "subcontract amount",
+            "contract sum",
+            "total compensation",
+            "base bid",
+            "contract total"
+        ],
+        "Safety Requirements": [
+            "safety requirements",
+            "osha",
+            "jobsite safety",
+            "ppe",
+            "safety manual",
+            "safety program",
+            "injury prevention"
+        ]
+    }
 
 
     topic = st.selectbox("Choose a contract topic to analyze:", list(topic_keywords.keys()))

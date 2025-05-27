@@ -4,12 +4,13 @@ import pdfplumber
 import openai
 import re
 
+# Set OpenRouter API
 openai.api_base = "https://openrouter.ai/api/v1"
 openai.api_key = "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"
 
 st.set_page_config(page_title="AI Dashboard", layout="wide")
 
-# --- Simple Password Gate ---
+# --- Password Gate ---
 def check_password():
     def password_entered():
         if st.session_state["password"] == "Wbg3033!":
@@ -27,13 +28,12 @@ def check_password():
 
 check_password()
 
-# Function to encode image in base64
+# --- Branding ---
 def get_base64_image(image_path):
     with open(image_path, "rb") as img_file:
         encoded = base64.b64encode(img_file.read()).decode()
         return f"data:image/jpeg;base64,{encoded}"
 
-# Load and embed the image
 encoded_logo = get_base64_image("logo.jpg")
 st.markdown(
     f"""
@@ -45,13 +45,9 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# ✅ Create tabbed layout
+# --- Layout Tabs ---
 tabs = st.tabs([
-    "Forecast AI",
-    "Compliance Checker",
-    "Summarizer",
-    "Contract Parsing",
-    "More Coming Soon"
+    "Forecast AI", "Compliance Checker", "Summarizer", "Contract Parsing", "More Coming Soon"
 ])
 
 with tabs[0]:
@@ -66,7 +62,6 @@ with tabs[1]:
 
 with tabs[2]:
     st.subheader("📝 Document Summarizer")
-
     st.markdown("### ➕ Option 1: Paste text to summarize")
     pasted_text = st.text_area("Paste text here")
     if st.button("Summarize Pasted Text"):
@@ -78,14 +73,10 @@ with tabs[2]:
 
     st.markdown("---")
     st.markdown("### ➕ Option 2: Upload a PDF and choose pages")
-
     uploaded_pdf = st.file_uploader("Upload a PDF file", type=["pdf"])
     page_option = st.radio("What do you want to summarize?", ["Whole document", "Select pages"])
-
-    page_range = ""
     if page_option == "Select pages":
         page_range = st.text_input("Enter pages to summarize (e.g., 1-3,5)")
-
     if st.button("Summarize PDF"):
         if uploaded_pdf:
             st.success("✅ PDF uploaded. (Summary logic coming next...)")
@@ -93,56 +84,31 @@ with tabs[2]:
         else:
             st.warning("Please upload a PDF file first.")
 
-
 with tabs[3]:
     st.subheader("📂 Contract Parsing – Section Lookup (AI Mode)")
 
-    uploaded_pdf = st.file_uploader("Upload a contract PDF", type=["pdf"])
+    uploaded_contract = st.file_uploader("Upload a contract PDF", type=["pdf"])
 
     topic_keywords = {
-        "Liquidated Damages": [
-           "liquidated damages", "liquidated amount", "penalty", "late delivery", "delay damages"
-        ],
-        "Payment Terms": [
-            "payment request", "payment terms", "billing", "invoice", "progress payments",
-            "final payment", "paid by owner", "schedule of values", "payment application"
-        ],
-        "Delays": [
-            "delay", "extension of time", "force majeure", "project delay",
-            "weather delay", "change order", "completion timeline", "time is of the essence"
-        ],
-        "Retention": [
-            "retainage", "retained", "withheld", "10%", "retention", "retainage percentage"
-        ],
-        "Schedule": [
-            "progress schedule", "completion date", "timeline", "schedule of work",
-            "project schedule", "construction timeline", "milestone"
-        ],
-        "Scope of Work": [
-            "scope of work", "subcontract work", "work includes", "services include",
-            "project scope", "work to be performed"
-        ],
-        "Contract Value": [
-            "subcontract amount", "subcontract price", "contract value", "contract sum",
-            "contract total", "total compensation", "base bid", "amount to be paid", "contractor agrees to pay subcontractor",
-            "contract price", "original subcontract sum", "subcontractor compensation"
-        ],
-        "Safety Requirements": [
-            "safety", "osha", "jobsite safety", "ppe", "site safety", "safety training",
-            "safety program", "injury prevention"
-        ]
+        "Liquidated Damages": ["liquidated damages", "liquidated amount", "penalty", "late delivery", "delay damages"],
+        "Payment Terms": ["payment request", "payment terms", "billing", "invoice", "progress payments", "final payment", "paid by owner", "schedule of values", "payment application"],
+        "Delays": ["delay", "extension of time", "force majeure", "project delay", "weather delay", "change order", "completion timeline", "time is of the essence"],
+        "Retention": ["retainage", "retained", "withheld", "10%", "retention", "retainage percentage"],
+        "Schedule": ["progress schedule", "completion date", "timeline", "schedule of work", "project schedule", "construction timeline", "milestone"],
+        "Scope of Work": ["scope of work", "subcontract work", "work includes", "services include", "project scope", "work to be performed"],
+        "Contract Value": ["subcontract amount", "subcontract price", "contract value", "contract sum", "contract total", "total compensation", "base bid", "amount to be paid", "contractor agrees to pay subcontractor", "contract price", "original subcontract sum", "subcontractor compensation"],
+        "Safety Requirements": ["safety", "osha", "jobsite safety", "ppe", "site safety", "safety training", "safety program", "injury prevention"]
     }
-
 
     topic = st.selectbox("Choose a contract topic to analyze:", list(topic_keywords.keys()))
 
-    if uploaded_pdf:
-        with pdfplumber.open(uploaded_pdf) as pdf:
+    if uploaded_contract:
+        with pdfplumber.open(uploaded_contract) as pdf:
             paragraphs = []
             for page in pdf.pages:
                 text = page.extract_text()
                 if text:
-                    paragraphs.extend(text.split("\n\n"))  # split full page into blocks
+                    paragraphs.extend(text.split("\n\n"))
 
         matches = []
         keywords = topic_keywords[topic]
@@ -193,4 +159,3 @@ Section Text:
 
 with tabs[4]:
     st.info("🚧 Stay tuned for more tools here!")
-

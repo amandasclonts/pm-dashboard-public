@@ -115,27 +115,29 @@ with tabs[3]:
         with pdfplumber.open(uploaded_pdf) as pdf:
             all_text = ""
             for page in pdf.pages:
-                all_text += page.extract_text() + "\n"
+                text = page.extract_text()
+                if text:
+                    all_text += text + "\n"
 
         st.success("✅ PDF uploaded and text extracted.")
 
         if st.button("Find Selected Section"):
             keywords = topic_keywords[topic]
-            found_sections = []
+            matching_lines = []
             lines = all_text.split("\n")
 
-            for i, line in enumerate(lines):
+            for line in lines:
                 for keyword in keywords:
                     if keyword.lower() in line.lower():
-                        snippet = "\n".join(lines[max(i - 2, 0): i + 3])
-                        found_sections.append(snippet)
+                        matching_lines.append(line.strip())
                         break
 
-            if found_sections:
-                st.markdown(f"### 🔍 Found the following matches for **{topic}**:")
-                for idx, section in enumerate(found_sections):
-                    with st.expander(f"Match {idx+1}"):
-                        st.write(section)
+            combined_text = "\n".join(matching_lines)
+
+            if combined_text.strip():
+                st.markdown(f"### 🔍 Extracted Text for **{topic}**:")
+                with st.expander("Click to view extracted section"):
+                    st.write(combined_text)
 
                 if st.button("Summarize With AI"):
                     with st.spinner("Contacting OpenRouter..."):
@@ -143,7 +145,7 @@ with tabs[3]:
 You are a contract analysis assistant. Summarize the following section from the contract.
 Topic: {topic}
 Section Text:
-{found_sections[0]}
+{combined_text}
 """
                         response = openai.ChatCompletion.create(
                             model="openchat/openchat-3.5-0106",
@@ -158,6 +160,7 @@ Section Text:
                         st.write(summary)
             else:
                 st.warning(f"No matches found for **{topic}**.")
+
  
 with tabs[4]:
     st.info("🚧 Stay tuned for more tools here!")

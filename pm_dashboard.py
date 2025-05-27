@@ -113,16 +113,18 @@ with tabs[3]:
         matches = []
         keywords = topic_keywords[topic]
         exclusion_keywords = ["insurance", "deductible", "bond", "ocip", "bonding", "liability"]
+        money_regex = re.compile(r"\$\d[\d,]*(?:\.\d{2})?")
 
         for i, para in enumerate(paragraphs):
             para_lower = para.lower()
             match_count = sum(kw.lower() in para_lower for kw in keywords)
+            has_money = bool(money_regex.search(para))
             has_exclusion = any(ex_kw in para_lower for ex_kw in exclusion_keywords)
 
-            if match_count >= 1 and not has_exclusion:
-                follow_up = paragraphs[i + 1] if i + 1 < len(paragraphs) else ""
-                full_block = f"{para.strip()}\n{follow_up.strip()}"
+            if match_count >= 1 and has_money and not has_exclusion:
+                full_block = para.strip()
                 matches.append(full_block)
+
 
         if matches:
             st.markdown(f"### 🔍 Found {len(matches)} section(s) related to **{topic}**:")

@@ -170,7 +170,7 @@ if matches:
                 unsafe_allow_html=True
              )
 
-     if st.button("Summarize All Matches with AI"):
+    if st.button("Summarize All Matches with AI"):
          with st.spinner("Contacting OpenRouter..."):
              combined_text = "\n\n".join(matches[:3])  # Limit to 3 to avoid token overflow
              prompt = f"""

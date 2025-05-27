@@ -161,19 +161,10 @@ with tabs[3]:
 
 
 
-if matches:
-    st.markdown(f"### 🔍 Found {len(matches)} section(s) related to **{topic}**:")
-    for idx, section in enumerate(matches):
-        with st.expander(f"Match {idx+1}"):
-            st.markdown(
-                f"<div style='overflow-x: auto; white-space: pre-wrap;'>{section}</div>",
-                unsafe_allow_html=True
-             )
-
-    if st.button("Summarize All Matches with AI"):
-         with st.spinner("Contacting OpenRouter..."):
-             combined_text = "\n\n".join(matches[:3])  # Limit to 3 to avoid token overflow
-             prompt = f"""
+if st.button("Summarize All Matches with AI"):
+    with st.spinner("Contacting OpenRouter..."):
+        combined_text = "\n\n".join(matches[:3])  # Limit to 3 to avoid token overflow
+        prompt = f"""
 You are a contract analysis assistant. Summarize the following section(s) from a contract related to:
 **{topic}**
 
@@ -186,11 +177,12 @@ Section Text:
                 {"role": "system", "content": "You summarize and extract details from contracts."},
                 {"role": "user", "content": prompt}
             ],
-             temperature=0.4
+            temperature=0.4
         )
         summary = response.choices[0].message.content
         st.markdown("### 🤖 AI Summary")
         st.write(summary)
+
 else:
     st.warning(f"No relevant sections found for **{topic}**.")
 

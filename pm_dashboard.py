@@ -2,6 +2,7 @@ import streamlit as st
 import base64
 import pdfplumber
 import openai
+import re
 
 openai.api_base = "https://openrouter.ai/api/v1"
 openai.api_key = "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"
@@ -177,7 +178,7 @@ with tabs[3]:
         keywords = topic_keywords[topic]
 
         for para in paragraphs:
-            match_count = sum(f" {kw} " in f" {para.lower()} " for kw in keywords)
+            match_count = sum(bool(re.search(rf"\b{re.escape(kw)}\b", para.lower())) for kw in keywords)
             if match_count >= 2:
                 matches.append(para.strip())
 

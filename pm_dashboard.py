@@ -134,7 +134,7 @@ with tabs[3]:
     }
 
 
-    topic = st.selectbox("Choose a contract topic to analyze:", list(topic_keywords.keys()))
+     topic = st.selectbox("Choose a contract topic to analyze:", list(topic_keywords.keys()))
 
     if uploaded_pdf:
         with pdfplumber.open(uploaded_pdf) as pdf:
@@ -144,47 +144,52 @@ with tabs[3]:
                 if text:
                     paragraphs.extend(text.split("\n\n"))  # split full page into blocks
 
-    matches = []
-    keywords = topic_keywords[topic]
-    exclusion_keywords = ["insurance", "deductible", "bond", "ocip", "bonding", "liability"]
+        matches = []
+        keywords = topic_keywords[topic]
+        exclusion_keywords = ["insurance", "deductible", "bond", "ocip", "bonding", "liability"]
 
-    for i, para in enumerate(paragraphs):
-        para_lower = para.lower()
-        match_count = sum(kw.lower() in para_lower for kw in keywords)
-        has_exclusion = any(ex_kw in para_lower for ex_kw in exclusion_keywords)
+        for i, para in enumerate(paragraphs):
+            para_lower = para.lower()
+            match_count = sum(kw.lower() in para_lower for kw in keywords)
+            has_exclusion = any(ex_kw in para_lower for ex_kw in exclusion_keywords)
 
-        if match_count >= 1 and not has_exclusion:
-            # Include 1 line below the match to grab associated contract sum
-            follow_up = paragraphs[i + 1] if i + 1 < len(paragraphs) else ""
-            full_block = f"{para.strip()}\n{follow_up.strip()}"
-            matches.append(full_block)
+            if match_count >= 1 and not has_exclusion:
+                follow_up = paragraphs[i + 1] if i + 1 < len(paragraphs) else ""
+                full_block = f"{para.strip()}\n{follow_up.strip()}"
+                matches.append(full_block)
 
+        if matches:
+            st.markdown(f"### 🔍 Found {len(matches)} section(s) related to **{topic}**:")
+            for idx, section in enumerate(matches):
+                with st.expander(f"Match {idx+1}"):
+                    st.markdown(
+                        f"<div style='overflow-x: auto; white-space: pre-wrap;'>{section}</div>",
+                        unsafe_allow_html=True
+                    )
 
-
-if st.button("Summarize All Matches with AI"):
-    with st.spinner("Contacting OpenRouter..."):
-        combined_text = "\n\n".join(matches[:3])  # Limit to 3 to avoid token overflow
-        prompt = f"""
+            if st.button("Summarize All Matches with AI"):
+                with st.spinner("Contacting OpenRouter..."):
+                    combined_text = "\n\n".join(matches[:3])
+                    prompt = f"""
 You are a contract analysis assistant. Summarize the following section(s) from a contract related to:
 **{topic}**
 
 Section Text:
 {combined_text}
 """
-        response = openai.ChatCompletion.create(
-            model="openchat/openchat-3.5-0106",
-            messages=[
-                {"role": "system", "content": "You summarize and extract details from contracts."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.4
-        )
-        summary = response.choices[0].message.content
-        st.markdown("### 🤖 AI Summary")
-        st.write(summary)
-
-else:
-    st.warning(f"No relevant sections found for **{topic}**.")
+                    response = openai.ChatCompletion.create(
+                        model="openchat/openchat-3.5-0106",
+                        messages=[
+                            {"role": "system", "content": "You summarize and extract details from contracts."},
+                            {"role": "user", "content": prompt}
+                        ],
+                        temperature=0.4
+                    )
+                    summary = response.choices[0].message.content
+                    st.markdown("### 🤖 AI Summary")
+                    st.write(summary)
+        else:
+            st.warning(f"No relevant sections found for **{topic}**.")
 
 with tabs[4]:
     st.info("🚧 Stay tuned for more tools here!")

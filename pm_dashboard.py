@@ -85,29 +85,29 @@ with tabs[3]:  # Contract Parsing Tab
     chunks = [c.strip() for c in chunks if len(c.strip()) > 50]
 
         # Match scoring
-        keywords = topic_keywords[topic]
-        exclusion_keywords = ["insurance", "deductible", "bond", "ocip", "liability"]
-        money_regex = re.compile(r"\$\d[\d,]*(?:\.\d{2})?")
+    keywords = topic_keywords[topic]
+    exclusion_keywords = ["insurance", "deductible", "bond", "ocip", "liability"]
+    money_regex = re.compile(r"\$\d[\d,]*(?:\.\d{2})?")
 
-        matches = []
-        for chunk in chunks:
-            lowered = chunk.lower()
-            match_score = sum(kw in lowered for kw in keywords)
-            has_exclusion = any(ex_kw in lowered for ex_kw in exclusion_keywords)
-            if match_score > 0 and not has_exclusion:
-                matches.append(chunk.strip())
+    matches = []
+    for chunk in chunks:
+        lowered = chunk.lower()
+        match_score = sum(kw in lowered for kw in keywords)
+        has_exclusion = any(ex_kw in lowered for ex_kw in exclusion_keywords)
+        if match_score > 0 and not has_exclusion:
+            matches.append(chunk.strip())
 
-        # Show matches
-        if matches:
-            st.markdown(f"### 🔍 Found {len(matches)} section(s) related to **{topic}**:")
-            for idx, section in enumerate(matches):
-                with st.expander(f"Match {idx + 1}"):
-                    st.markdown(f"<div style='overflow-x: auto; white-space: pre-wrap;'>{section}</div>", unsafe_allow_html=True)
+    # Show matches
+    if matches:
+        st.markdown(f"### 🔍 Found {len(matches)} section(s) related to **{topic}**:")
+        for idx, section in enumerate(matches):
+            with st.expander(f"Match {idx + 1}"):
+                st.markdown(f"<div style='overflow-x: auto; white-space: pre-wrap;'>{section}</div>", unsafe_allow_html=True)
 
-            if st.button("Summarize All Matches with AI"):
-                with st.spinner("Contacting OpenRouter..."):
-                    combined_text = "\n\n".join(matches[:3])
-                    prompt = f"""
+        if st.button("Summarize All Matches with AI"):
+            with st.spinner("Contacting OpenRouter..."):
+                combined_text = "\n\n".join(matches[:3])
+                prompt = f"""
 You are a contract analysis assistant. Summarize the following section(s) from a contract related to:
 **{topic}**
 

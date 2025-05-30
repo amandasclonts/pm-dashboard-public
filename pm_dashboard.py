@@ -72,20 +72,9 @@ with tabs[3]:  # Contract Parsing Tab
             full_text = "\n".join([page.get_text() for page in doc])
         st.text(full_text[:1000])  # Show the first 1000 characters of the PDF
 
-        sentences = re.split(r'(?<=[.!?])\s+(?=[A-Z])', full_text)
-
-        # Group into smart chunks (based on headers or breaks)
-        chunks = []
-        current_chunk = ""
-        for sent in sentences:
-            if re.match(r'^(ARTICLE\s+\d+|Section\s+\d+|\d+\.\d+)', sent.strip(), re.IGNORECASE):
-                if current_chunk:
-                    chunks.append(current_chunk.strip())
-                current_chunk = sent
-            else:
-                current_chunk += " " + sent
-        if current_chunk:
-            chunks.append(current_chunk.strip())
+        # Split by double newlines to preserve paragraphs/sections
+        chunks = full_text.split("\n\n")
+        chunks = [c.strip() for c in chunks if len(c.strip()) > 50]  # Remove short/empty ones
 
         # Match scoring
         keywords = topic_keywords[topic]

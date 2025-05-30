@@ -2,11 +2,16 @@ import streamlit as st
 import base64
 import pdfplumber
 import openai
+import nltk
 import re
+from nltk.tokenize import sent_tokenize
 
-# Set OpenRouter API
+# Download nltk tokenizer (only first time)
+nltk.download('punkt', quiet=True)
+
+# Set OpenRouter (OpenAI-compatible) API
 openai.api_base = "https://openrouter.ai/api/v1"
-openai.api_key = "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"
+openai.api_key = st.secrets["openai"]["api_key"] if "openai" in st.secrets else "sk-your-key-here"
 
 st.set_page_config(page_title="AI Dashboard", layout="wide")
 
@@ -45,96 +50,66 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# --- Layout Tabs ---
-tabs = st.tabs([
-    "Forecast AI", "Compliance Checker", "Summarizer", "Contract Parsing", "More Coming Soon"
-])
+# --- Tabs ---
+tabs = st.tabs(["Forecast AI", "Compliance Checker", "Summarizer", "Contract Parsing", "More Coming Soon"])
 
-with tabs[0]:
-    st.subheader("📈 Forecast AI")
-    st.text_input("Enter project name:")
-    st.button("Run Forecast")
-
-with tabs[1]:
-    st.subheader("📋 Compliance Checker")
-    st.file_uploader("Upload civil plan PDF", type=["pdf"])
-    st.button("Check Compliance")
-
-with tabs[2]:
-    st.subheader("📝 Document Summarizer")
-    st.markdown("### ➕ Option 1: Paste text to summarize")
-    pasted_text = st.text_area("Paste text here")
-    if st.button("Summarize Pasted Text"):
-        if pasted_text.strip():
-            st.success("✅ Summarizing pasted text...")
-            st.write(f"**Summary:** {pasted_text[:100]}... (summary placeholder)")
-        else:
-            st.warning("Please paste some text.")
-
-    st.markdown("---")
-    st.markdown("### ➕ Option 2: Upload a PDF and choose pages")
-    uploaded_pdf = st.file_uploader("Upload a PDF file", type=["pdf"])
-    page_option = st.radio("What do you want to summarize?", ["Whole document", "Select pages"])
-    if page_option == "Select pages":
-        page_range = st.text_input("Enter pages to summarize (e.g., 1-3,5)")
-    if st.button("Summarize PDF"):
-        if uploaded_pdf:
-            st.success("✅ PDF uploaded. (Summary logic coming next...)")
-            st.write(f"Summary from: `{uploaded_pdf.name}` — Pages: {page_range or 'All'}")
-        else:
-            st.warning("Please upload a PDF file first.")
-
-with tabs[3]:
+with tabs[3]:  # Contract Parsing Tab
     st.subheader("📂 Contract Parsing – Section Lookup (AI Mode)")
 
     uploaded_contract = st.file_uploader("Upload a contract PDF", type=["pdf"])
 
     topic_keywords = {
-        "Liquidated Damages": ["liquidated damages", "liquidated amount", "penalty", "late delivery", "delay damages"],
-        "Payment Terms": ["payment request", "payment terms", "billing", "invoice", "progress payments", "final payment", "paid by owner", "schedule of values", "payment application"],
-        "Delays": ["delay", "extension of time", "force majeure", "project delay", "weather delay", "change order", "completion timeline", "time is of the essence"],
+        "Liquidated Damages": ["liquidated damages", "penalty", "late delivery", "delay damages"],
+        "Payment Terms": ["payment terms", "invoice", "progress payments", "final payment", "paid by owner", "schedule of values", "payment application"],
+        "Delays": ["delay", "extension of time", "force majeure", "project delay", "weather delay", "time is of the essence"],
         "Retention": ["retainage", "retained", "withheld", "10%", "retention", "retainage percentage"],
-        "Schedule": ["progress schedule", "completion date", "timeline", "schedule of work", "project schedule", "construction timeline", "milestone"],
-        "Scope of Work": ["scope of work", "subcontract work", "work includes", "services include", "project scope", "work to be performed"],
-        "Contract Value": ["contract price", "contract value", "contract sum", "contract total", "total compensation", "subcontract amount", "subcontract price", "base bid",
-        "original subcontract sum", "subcontractor compensation", "contractor shall pay", "contractor agrees to pay", "agrees to pay subcontractor", "shall pay to subcontractor"],
-        "Safety Requirements": ["safety", "osha", "jobsite safety", "ppe", "site safety", "safety training", "safety program", "injury prevention"]
+        "Schedule": ["completion date", "timeline", "project schedule", "construction timeline", "milestone"],
+        "Scope of Work": ["scope of work", "subcontract work", "services include", "work to be performed"],
+        "Contract Value": ["contract price", "contract value", "contract sum", "subcontract amount", "total compensation", "base bid"],
+        "Safety Requirements": ["safety", "osha", "ppe", "site safety", "safety program", "injury prevention"]
     }
 
     topic = st.selectbox("Choose a contract topic to analyze:", list(topic_keywords.keys()))
 
     if uploaded_contract:
         with pdfplumber.open(uploaded_contract) as pdf:
-            paragraphs = []
-            for page in pdf.pages:
-                text = page.extract_text()
-                if text:
-                    paragraphs.extend(text.split("\n\n"))
+            full_text = "\n".join([page.extract_text() for page in pdf.pages if page.extract_text()])
 
-        matches = []
+        # Tokenize sentences
+        sentences = sent_tokenize(full_text)
+
+        # Group into smart chunks (based on headers or breaks)
+        chunks = []
+        current_chunk = ""
+        for sent in sentences:
+            if re.match(r'^(ARTICLE\s+\d+|Section\s+\d+|\d+\.\d+)', sent.strip(), re.IGNORECASE):
+                if current_chunk:
+                    chunks.append(current_chunk.strip())
+                current_chunk = sent
+            else:
+                current_chunk += " " + sent
+        if current_chunk:
+            chunks.append(current_chunk.strip())
+
+        # Match scoring
         keywords = topic_keywords[topic]
-        exclusion_keywords = ["insurance", "deductible", "bond", "ocip", "bonding", "liability"]
+        exclusion_keywords = ["insurance", "deductible", "bond", "ocip", "liability"]
         money_regex = re.compile(r"\$\d[\d,]*(?:\.\d{2})?")
 
-        for i, para in enumerate(paragraphs):
-            para_lower = para.lower()
-            match_count = sum(kw.lower() in para_lower for kw in keywords)
-            has_money = bool(money_regex.search(para))
-            has_exclusion = any(ex_kw in para_lower for ex_kw in exclusion_keywords)
+        matches = []
+        for chunk in chunks:
+            lowered = chunk.lower()
+            match_score = sum(kw in lowered for kw in keywords)
+            has_exclusion = any(ex_kw in lowered for ex_kw in exclusion_keywords)
+            if match_score > 0 and not has_exclusion:
+                matches.append(chunk.strip())
 
-            if match_count >= 1 and has_money and not has_exclusion:
-                full_block = para.strip()
-                matches.append(full_block)
-
-
+        # Show matches
         if matches:
             st.markdown(f"### 🔍 Found {len(matches)} section(s) related to **{topic}**:")
             for idx, section in enumerate(matches):
-                with st.expander(f"Match {idx+1}"):
-                    st.markdown(
-                        f"<div style='overflow-x: auto; white-space: pre-wrap;'>{section}</div>",
-                        unsafe_allow_html=True
-                    )
+                with st.expander(f"Match {idx + 1}"):
+                    st.markdown(f"<div style='overflow-x: auto; white-space: pre-wrap;'>{section}</div>", unsafe_allow_html=True)
 
             if st.button("Summarize All Matches with AI"):
                 with st.spinner("Contacting OpenRouter..."):

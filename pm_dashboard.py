@@ -69,6 +69,7 @@ with tabs[3]:  # Contract Parsing Tab
     if uploaded_contract:
         with pdfplumber.open(uploaded_contract) as pdf:
             full_text = "\n".join([page.extract_text() for page in pdf.pages if page.extract_text()])
+        st.text(full_text[:1000])  # Show the first 1000 characters of the PDF
 
         sentences = re.split(r'(?<=[.!?])\s+(?=[A-Z])', full_text)
 

@@ -2,12 +2,7 @@ import streamlit as st
 import base64
 import pdfplumber
 import openai
-import nltk
 import re
-from nltk.tokenize import sent_tokenize
-
-# Download nltk tokenizer (only first time)
-nltk.download('punkt', quiet=True)
 
 # Set OpenRouter (OpenAI-compatible) API
 openai.api_base = "https://openrouter.ai/api/v1"
@@ -75,8 +70,7 @@ with tabs[3]:  # Contract Parsing Tab
         with pdfplumber.open(uploaded_contract) as pdf:
             full_text = "\n".join([page.extract_text() for page in pdf.pages if page.extract_text()])
 
-        # Tokenize sentences
-        sentences = sent_tokenize(full_text)
+        sentences = re.split(r'(?<=[.!?])\s+(?=[A-Z])', full_text)
 
         # Group into smart chunks (based on headers or breaks)
         chunks = []

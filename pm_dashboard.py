@@ -67,9 +67,18 @@ with tabs[3]:  # Contract Parsing Tab
 
     topic = st.selectbox("Choose a contract topic to analyze:", list(topic_keywords.keys()))
 
+    def clean_contract_text(text):
+        # Remove extra newlines within paragraphs
+        text = re.sub(r'(?<!\n)\n(?!\n)', ' ', text)  # Turn single newlines into spaces
+        text = re.sub(r'\n{2,}', '\n\n', text)        # Keep real paragraph breaks
+        text = re.sub(r'\s{2,}', ' ', text)           # Remove extra spacing
+        return text.strip()
+
     if uploaded_contract:
         with fitz.open(stream=uploaded_contract.read(), filetype="pdf") as doc:
-            full_text = "\n".join([page.get_text() for page in doc])
+            raw_text = "\n".join([page.get_text() for page in doc])
+    full_text = clean_contract_text(raw_text)
+
         st.text(full_text[:1000])  # Show the first 1000 characters of the PDF
 
         chunks = re.split(r'\n(?=\d+\.\d+|ARTICLE \d+|Section \d+)', full_text)

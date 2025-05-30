@@ -3,6 +3,7 @@ import base64
 import pdfplumber
 import openai
 import re
+import fitz  # PyMuPDF
 
 # Set OpenRouter (OpenAI-compatible) API
 openai.api_base = "https://openrouter.ai/api/v1"
@@ -67,8 +68,8 @@ with tabs[3]:  # Contract Parsing Tab
     topic = st.selectbox("Choose a contract topic to analyze:", list(topic_keywords.keys()))
 
     if uploaded_contract:
-        with pdfplumber.open(uploaded_contract) as pdf:
-            full_text = "\n".join([page.extract_text() for page in pdf.pages if page.extract_text()])
+        with fitz.open(stream=uploaded_contract.read(), filetype="pdf") as doc:
+            full_text = "\n".join([page.get_text() for page in doc])
         st.text(full_text[:1000])  # Show the first 1000 characters of the PDF
 
         sentences = re.split(r'(?<=[.!?])\s+(?=[A-Z])', full_text)

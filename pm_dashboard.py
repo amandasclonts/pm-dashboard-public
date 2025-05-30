@@ -1,6 +1,5 @@
 import streamlit as st
 import base64
-import pdfplumber
 import openai
 import re
 import fitz  # PyMuPDF
@@ -46,6 +45,13 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+# --- Text Cleanup Function ---
+def clean_contract_text(text):
+    text = re.sub(r'(?<!\n)\n(?!\n)', ' ', text)
+    text = re.sub(r'\n{2,}', '\n\n', text)
+    text = re.sub(r'\s{2,}', ' ', text)
+    return text.strip()
+
 # --- Tabs ---
 tabs = st.tabs(["Forecast AI", "Compliance Checker", "Summarizer", "Contract Parsing", "More Coming Soon"])
 
@@ -61,53 +67,47 @@ with tabs[3]:  # Contract Parsing Tab
         "Retention": ["retainage", "retained", "withheld", "10%", "retention", "retainage percentage"],
         "Schedule": ["completion date", "timeline", "project schedule", "construction timeline", "milestone"],
         "Scope of Work": ["scope of work", "subcontract work", "services include", "work to be performed"],
-        "Contract Value": ["contract price", "contract value", "contract sum", "subcontract amount", "total compensation", "base bid", "contract amount", "zero dollars","agrees to pay subcontractor", "shall pay to subcontractor", "contract total"],
+        "Contract Value": [
+            "contract price", "contract value", "contract sum", "subcontract amount",
+            "total compensation", "base bid", "contract amount", "zero dollars",
+            "agrees to pay subcontractor", "shall pay to subcontractor", "contract total"
+        ],
         "Safety Requirements": ["safety", "osha", "ppe", "site safety", "safety program", "injury prevention"]
     }
 
     topic = st.selectbox("Choose a contract topic to analyze:", list(topic_keywords.keys()))
 
-    def clean_contract_text(text):
-        # Remove extra newlines within paragraphs
-        text = re.sub(r'(?<!\n)\n(?!\n)', ' ', text)  # Turn single newlines into spaces
-        text = re.sub(r'\n{2,}', '\n\n', text)        # Keep real paragraph breaks
-        text = re.sub(r'\s{2,}', ' ', text)           # Remove extra spacing
-        return text.strip()
-
     if uploaded_contract:
         with fitz.open(stream=uploaded_contract.read(), filetype="pdf") as doc:
             raw_text = "\n".join([page.get_text() for page in doc])
-    full_text = clean_contract_text(raw_text)
+        full_text = clean_contract_text(raw_text)
 
-    st.text(full_text[:1000])  # Show the first 1000 characters of the PDF
+        st.text(full_text[:1000])  # Preview first 1000 characters
 
-    chunks = re.split(r'\n(?=\d+\.\d+|ARTICLE \d+|Section \d+)', full_text)
-    chunks = [c.strip() for c in chunks if len(c.strip()) > 50]
+        chunks = re.split(r'\n(?=\d+\.\d+|ARTICLE \d+|Section \d+)', full_text)
+        chunks = [c.strip() for c in chunks if len(c.strip()) > 50]
 
-        # Match scoring
-    keywords = topic_keywords[topic]
-    exclusion_keywords = ["insurance", "deductible", "bond", "ocip", "liability"]
-    money_regex = re.compile(r"\$\d[\d,]*(?:\.\d{2})?")
+        keywords = topic_keywords[topic]
+        exclusion_keywords = ["insurance", "deductible", "bond", "ocip", "liability"]
 
-    matches = []
-    for chunk in chunks:
-        lowered = chunk.lower()
-        match_score = sum(kw in lowered for kw in keywords)
-        has_exclusion = any(ex_kw in lowered for ex_kw in exclusion_keywords)
-        if match_score > 0 and not has_exclusion:
-            matches.append(chunk.strip())
+        matches = []
+        for chunk in chunks:
+            lowered = chunk.lower()
+            match_score = sum(kw in lowered for kw in keywords)
+            has_exclusion = any(ex_kw in lowered for ex_kw in exclusion_keywords)
+            if match_score > 0 and not has_exclusion:
+                matches.append(chunk.strip())
 
-    # Show matches
-    if matches:
-        st.markdown(f"### 🔍 Found {len(matches)} section(s) related to **{topic}**:")
-        for idx, section in enumerate(matches):
-            with st.expander(f"Match {idx + 1}"):
-                st.markdown(f"<div style='overflow-x: auto; white-space: pre-wrap;'>{section}</div>", unsafe_allow_html=True)
+        if matches:
+            st.markdown(f"### 🔍 Found {len(matches)} section(s) related to **{topic}**:")
+            for idx, section in enumerate(matches):
+                with st.expander(f"Match {idx + 1}"):
+                    st.markdown(f"<div style='overflow-x: auto; white-space: pre-wrap;'>{section}</div>", unsafe_allow_html=True)
 
-        if st.button("Summarize All Matches with AI"):
-            with st.spinner("Contacting OpenRouter..."):
-                combined_text = "\n\n".join(matches[:3])
-                prompt = f"""
+            if st.button("Summarize All Matches with AI"):
+                with st.spinner("Contacting OpenRouter..."):
+                    combined_text = "\n\n".join(matches[:3])
+                    prompt = f"""
 You are a contract analysis assistant. Summarize the following section(s) from a contract related to:
 **{topic}**
 

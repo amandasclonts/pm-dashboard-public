@@ -81,8 +81,8 @@ with tabs[3]:  # Contract Parsing Tab
 
     st.text(full_text[:1000])  # Show the first 1000 characters of the PDF
 
-        chunks = re.split(r'\n(?=\d+\.\d+|ARTICLE \d+|Section \d+)', full_text)
-        chunks = [c.strip() for c in chunks if len(c.strip()) > 50]
+    chunks = re.split(r'\n(?=\d+\.\d+|ARTICLE \d+|Section \d+)', full_text)
+    chunks = [c.strip() for c in chunks if len(c.strip()) > 50]
 
         # Match scoring
         keywords = topic_keywords[topic]

@@ -84,7 +84,7 @@ with tabs[3]:  # Contract Parsing Tab
 
         st.text(full_text[:1000])  # Preview first 1000 characters
 
-        chunks = re.split(r'\n(?=\d+\.\d+|ARTICLE \d+|Section \d+)', full_text)
+        chunks = re.split(r'\n(?=(\d+\.\d+|ARTICLE \d+|Section \d+|PROJECT:|OWNER:|DESIGNER:))', full_text)
         chunks = [c.strip() for c in chunks if len(c.strip()) > 50]
 
         keywords = topic_keywords[topic]

@@ -79,7 +79,7 @@ with tabs[3]:  # Contract Parsing Tab
             raw_text = "\n".join([page.get_text() for page in doc])
     full_text = clean_contract_text(raw_text)
 
-        st.text(full_text[:1000])  # Show the first 1000 characters of the PDF
+    st.text(full_text[:1000])  # Show the first 1000 characters of the PDF
 
         chunks = re.split(r'\n(?=\d+\.\d+|ARTICLE \d+|Section \d+)', full_text)
         chunks = [c.strip() for c in chunks if len(c.strip()) > 50]

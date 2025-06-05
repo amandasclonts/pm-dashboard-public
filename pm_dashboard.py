@@ -78,20 +78,19 @@ with tabs[3]:  # Contract Parsing Tab
     topic = st.selectbox("Choose a contract topic to analyze:", list(topic_keywords.keys()))
 
     if uploaded_contract:
-        # Extract and clean text
-        with fitz.open(stream=uploaded_contract.read(), filetype="pdf") as doc:
-            raw_text = "\n".join([page.get_text() for page in doc])
-        full_text = clean_contract_text(raw_text)
+    with fitz.open(stream=uploaded_contract.read(), filetype="pdf") as doc:
+        raw_text = "\n".join([page.get_text() for page in doc])
+    full_text = clean_contract_text(raw_text)
 
-        # Split using both headers and paragraphs
-        raw_chunks = re.split(r'\n(?=(\d+\.\d+|ARTICLE \d+|Section \d+|PROJECT:|OWNER:|DESIGNER:))', full_text)
-        paragraph_chunks = full_text.split("\n\n")
-        chunks = list({chunk.strip() for chunk in raw_chunks + paragraph_chunks if len(chunk.strip()) > 50})
+    # Split using both headers and paragraphs
+    raw_chunks = re.split(r'\n(?=(\d+\.\d+|ARTICLE \d+|Section \d+|PROJECT:|OWNER:|DESIGNER:))', full_text)
+    paragraph_chunks = full_text.split("\n\n")
+    chunks = list({chunk.strip() for chunk in raw_chunks + paragraph_chunks if len(chunk.strip()) > 50})
 
-        # OPTIONAL DEBUG: Preview first 5 chunks
-        st.markdown("**Previewing first 5 chunks (for debugging):**")
-        for idx, c in enumerate(chunks[:5]):
-            st.text(f"[Chunk {idx+1}]\n{c[:400]}\n---")
+    # ✅ Preview AFTER chunk is defined and inside the same block
+    st.markdown("**Previewing first 5 chunks (for debugging):**")
+    for idx, c in enumerate(chunks[:5]):
+        st.text(f"[Chunk {idx+1}]\n{c[:400]}\n---")
 
         # Match keywords
         keywords = topic_keywords[topic]

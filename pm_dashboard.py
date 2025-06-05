@@ -82,10 +82,18 @@ with tabs[3]:  # Contract Parsing Tab
             raw_text = "\n".join([page.get_text() for page in doc])
         full_text = clean_contract_text(raw_text)
 
-        st.text(full_text[:1000])  # Preview first 1000 characters
+        st.markdown("**Previewing first 5 chunks (for debugging):**")
+        for idx, c in enumerate(chunks[:5]):
+            st.text(f"[Chunk {idx+1}]\n{c[:400]}\n---")
 
-        chunks = re.split(r'\n(?=(\d+\.\d+|ARTICLE \d+|Section \d+|PROJECT:|OWNER:|DESIGNER:))', full_text)
-        chunks = [c.strip() for c in chunks if len(c.strip()) > 50]
+
+        # Combine paragraph-based and section-based chunking
+        raw_chunks = re.split(r'\n(?=(\d+\.\d+|ARTICLE \d+|Section \d+|PROJECT:|OWNER:|DESIGNER:))', full_text)
+        paragraph_chunks = full_text.split("\n\n")
+
+        # Combine and deduplicate all logical chunks
+        chunks = list({chunk.strip() for chunk in raw_chunks + paragraph_chunks if len(chunk.strip()) > 50})
+
 
         keywords = topic_keywords[topic]
         exclusion_keywords = ["insurance", "deductible", "bond", "ocip", "liability"]

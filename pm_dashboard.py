@@ -70,6 +70,11 @@ with tabs[3]:  # Contract Parsing Tab
     if uploaded_contract:
         with fitz.open(stream=uploaded_contract.read(), filetype="pdf") as doc:
             full_text = "\n".join([page.get_text() for page in doc])
+            if "liquidated damages" in full_text.lower():
+                st.success("✅ 'liquidated damages' was found in the full text.")
+            else:
+                st.error("❌ 'liquidated damages' was NOT found in the full text.")
+
         st.text(full_text[:1000])  # Show the first 1000 characters of the PDF
 
        # Split by double newlines to preserve paragraphs/sections
@@ -81,6 +86,10 @@ with tabs[3]:  # Contract Parsing Tab
         keywords = topic_keywords[topic]
         exclusion_keywords = ["insurance", "deductible", "bond", "ocip", "liability"]
         money_regex = re.compile(r"\$\d[\d,]*(?:\.\d{2})?")
+
+        for idx, chunk in enumerate(chunks):
+            if "liquidated damages" in chunk.lower():
+                st.warning(f"Found in Chunk {idx+1}:\n{chunk[:500]}")
 
         matches = []
         for chunk in chunks:

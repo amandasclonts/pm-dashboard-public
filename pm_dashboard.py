@@ -78,18 +78,28 @@ with tabs[3]:  # Contract Parsing Tab
         chunks = [c.strip() for c in chunks if len(c.strip()) > 50]
 
 
-        # Match scoring
+        # Match scoring with topic-specific tuning
         keywords = topic_keywords[topic]
-        exclusion_keywords = ["insurance", "deductible", "bond", "ocip", "liability"]
-        money_regex = re.compile(r"\$\d[\d,]*(?:\.\d{2})?")
+        lowered_topic = topic.lower()
+
+        # Optional: tighten noisy matches for specific topics
+        safety_exclusions = [
+            "decorative", "design-build provisions", "scope of amenities", "contract sum", "unit prices"
+        ]
 
         matches = []
         for chunk in chunks:
             lowered = chunk.lower()
             match_score = sum(kw in lowered for kw in keywords)
-            if match_score > 0:
-                matches.append(chunk.strip())
-
+    
+            # Refine logic for Safety Requirements only
+            if topic == "Safety Requirements":
+                has_exclusion = any(ex_kw in lowered for ex_kw in safety_exclusions)
+                if match_score >= 2 and not has_exclusion:
+                    matches.append(chunk.strip())
+            else:
+                if match_score > 0:
+                    matches.append(chunk.strip())
 
         # Show matches
         if matches:

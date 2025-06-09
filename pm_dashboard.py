@@ -95,9 +95,9 @@ with tabs[3]:  # Contract Parsing Tab
         for chunk in chunks:
             lowered = chunk.lower()
             match_score = sum(kw in lowered for kw in keywords)
-            has_exclusion = any(ex_kw in lowered for ex_kw in exclusion_keywords)
-            if match_score > 0 and not has_exclusion:
+            if match_score > 0:
                 matches.append(chunk.strip())
+
 
         # Show matches
         if matches:

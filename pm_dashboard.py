@@ -1,5 +1,6 @@
 import streamlit as st
 import base64
+import pdfplumber
 import openai
 import re
 import fitz  # PyMuPDF
@@ -45,13 +46,6 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# --- Text Cleanup Function ---
-def clean_contract_text(text):
-    text = re.sub(r'(?<!\n)\n(?!\n)', ' ', text)
-    text = re.sub(r'\n{2,}', '\n\n', text)
-    text = re.sub(r'\s{2,}', ' ', text)
-    return text.strip()
-
 # --- Tabs ---
 tabs = st.tabs(["Forecast AI", "Compliance Checker", "Summarizer", "Contract Parsing", "More Coming Soon"])
 
@@ -67,11 +61,7 @@ with tabs[3]:  # Contract Parsing Tab
         "Retention": ["retainage", "retained", "withheld", "10%", "retention", "retainage percentage"],
         "Schedule": ["completion date", "timeline", "project schedule", "construction timeline", "milestone"],
         "Scope of Work": ["scope of work", "subcontract work", "services include", "work to be performed"],
-        "Contract Value": [
-            "contract price", "contract value", "contract sum", "subcontract amount",
-            "total compensation", "base bid", "contract amount", "zero dollars",
-            "agrees to pay subcontractor", "shall pay to subcontractor", "contract total"
-        ],
+        "Contract Value": ["contract price", "contract value", "contract sum", "subcontract amount", "total compensation", "base bid", "contract amount", "zero dollars", "agrees to pay subcontractor", "shall pay to subcontractor", "contract total"],
         "Safety Requirements": ["safety", "osha", "ppe", "site safety", "safety program", "injury prevention"]
     }
 
@@ -79,22 +69,18 @@ with tabs[3]:  # Contract Parsing Tab
 
     if uploaded_contract:
         with fitz.open(stream=uploaded_contract.read(), filetype="pdf") as doc:
-            raw_text = "\n".join([page.get_text() for page in doc])
-        full_text = clean_contract_text(raw_text)
+            full_text = "\n".join([page.get_text() for page in doc])
+        st.text(full_text[:1000])  # Show the first 1000 characters of the PDF
 
-        # Split using both headers and paragraphs
-        raw_chunks = re.split(r'\n(?=(\d+\.\d+|ARTICLE \d+|Section \d+|PROJECT:|OWNER:|DESIGNER:))', full_text)
-        paragraph_chunks = full_text.split("\n\n")
-        chunks = list({chunk.strip() for chunk in raw_chunks + paragraph_chunks if len(chunk.strip()) > 50})
+       # Split by double newlines to preserve paragraphs/sections
+        chunks = re.split(r'\n(?=\d+\.\d+|ARTICLE \d+|Section \d+)', full_text)
+        chunks = [c.strip() for c in chunks if len(c.strip()) > 50]
 
-        # ✅ Preview AFTER chunks are defined
-        st.markdown("**Previewing first 5 chunks (for debugging):**")
-        for idx, c in enumerate(chunks[:5]):
-            st.text(f"[Chunk {idx+1}]\n{c[:400]}\n---")
 
-        # Keyword matching
+        # Match scoring
         keywords = topic_keywords[topic]
         exclusion_keywords = ["insurance", "deductible", "bond", "ocip", "liability"]
+        money_regex = re.compile(r"\$\d[\d,]*(?:\.\d{2})?")
 
         matches = []
         for chunk in chunks:
@@ -104,6 +90,7 @@ with tabs[3]:  # Contract Parsing Tab
             if match_score > 0 and not has_exclusion:
                 matches.append(chunk.strip())
 
+        # Show matches
         if matches:
             st.markdown(f"### 🔍 Found {len(matches)} section(s) related to **{topic}**:")
             for idx, section in enumerate(matches):
@@ -134,7 +121,5 @@ Section Text:
         else:
             st.warning(f"No relevant sections found for **{topic}**.")
 
-
 with tabs[4]:
     st.info("🚧 Stay tuned for more tools here!")
-

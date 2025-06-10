@@ -49,6 +49,38 @@ st.markdown(
 # --- Tabs ---
 tabs = st.tabs(["Forecast AI", "Compliance Checker", "Summarizer", "Contract Parsing", "More Coming Soon"])
 
+with tabs[1]:  # Compliance Checker Tab
+    st.subheader("📋 Civil Plan Compliance Checker")
+
+    plan_pdf = st.file_uploader("Upload a civil plan PDF", type=["pdf"], key="civil_pdf")
+
+    if plan_pdf:
+        with pdfplumber.open(plan_pdf) as pdf:
+            extracted_text = "\n".join([page.extract_text() for page in pdf.pages if page.extract_text()])
+
+        st.success("✅ Civil plan uploaded. Running compliance checks...")
+
+        # Define simple rule checks (expand as needed)
+        violations = []
+
+        if not re.search(r'8["]? [mM]ain', extracted_text):
+            violations.append("❌ Missing 8\" water main.")
+
+        if not re.search(r'valve spacing.*?\b(300|350|400|500)\b\s?(ft|feet)', extracted_text, re.IGNORECASE):
+            violations.append("❌ Valve spacing requirements not specified or incorrect.")
+
+        if not re.search(r'hydrant spacing.*?\b(300|400|500)\b\s?(ft|feet)', extracted_text, re.IGNORECASE):
+            violations.append("❌ Hydrant spacing requirements not specified or incorrect.")
+
+        # Display results
+        if violations:
+            st.markdown("### ⚠️ Compliance Issues Found:")
+            for issue in violations:
+                st.write(issue)
+        else:
+            st.success("✅ No compliance issues detected based on current rules.")
+
+
 with tabs[3]:  # Contract Parsing Tab
     st.subheader("📂 Contract Parsing – Section Lookup (AI Mode)")
 

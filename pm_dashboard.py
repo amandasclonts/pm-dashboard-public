@@ -4,6 +4,7 @@ import pdfplumber
 import openai
 import re
 import fitz  # PyMuPDF
+import pandas as pd
 
 # Set OpenRouter (OpenAI-compatible) API
 openai.api_base = "https://openrouter.ai/api/v1"
@@ -52,27 +53,6 @@ tabs = st.tabs(["Forecast AI", "Compliance Checker", "Summarizer", "Contract Par
 with tabs[1]:  # Compliance Checker Tab
     st.subheader("📋 Civil Plan Compliance Checker")
 
-    civil_plan_pdf = st.file_uploader("Upload a civil plan PDF", type=["pdf"], key="civil")
-    city_manual_pdf = st.file_uploader("Upload the corresponding City Design Manual PDF", type=["pdf"], key="manual")
-
-    if civil_plan_pdf and city_manual_pdf:
-        st.success("✅ Both files uploaded. Ready to check compliance.")
-        
-        # Example placeholder: you can replace with actual comparison logic
-        st.info("🚧 Compliance checking logic goes here...")
-        
-        # Load and process the PDFs using PyMuPDF
-        with fitz.open(stream=civil_plan_pdf.read(), filetype="pdf") as civil_doc:
-            civil_text = "\n".join([page.get_text() for page in civil_doc])
-
-        with fitz.open(stream=city_manual_pdf.read(), filetype="pdf") as manual_doc:
-            manual_text = "\n".join([page.get_text() for page in manual_doc])
-        
-        st.markdown("### 🏗️ Civil Plan Excerpt:")
-        st.text(civil_text[:1000])
-
-        st.markdown("### 🏛️ City Design Manual Excerpt:")
-        st.text(manual_text[:1000])
 
 
 with tabs[3]:  # Contract Parsing Tab

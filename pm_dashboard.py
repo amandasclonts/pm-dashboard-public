@@ -67,7 +67,7 @@ with tabs[3]:  # Contract Parsing Tab
         "Retention": ["retainage", "retained", "withheld", "10%", "retention", "retainage percentage"],
         "Schedule": ["completion date", "timeline", "project schedule", "construction timeline", "milestone"],
         "Scope of Work": ["scope of work", "subcontract work", "services include", "work to be performed"],
-        "Contract Value": ["contract price", "contract value", "contract sum", "compensation", "subcontract amount", "total compensation", "base bid", "contract amount", "zero dollars", "agrees to pay subcontractor", "shall pay to subcontractor", "contract total"],
+        "Contract Value": ["contract price", "contract value", "contract sum", "compensation", "subcontract price", "subcontract amount", "total compensation", "base bid", "contract amount", "zero dollars", "agrees to pay subcontractor", "shall pay to subcontractor", "contract total"],
         "Safety Requirements": ["safety", "osha", "ppe", "site safety", "safety program", "injury prevention"]
     }
 

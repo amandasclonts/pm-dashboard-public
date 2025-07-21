@@ -1,14 +1,12 @@
 import streamlit as st
 import base64
 import pdfplumber
-import openai
 import re
 import fitz  # PyMuPDF
 import pandas as pd
 
-# Set OpenRouter (OpenAI-compatible) API
-openai.api_base = "https://openrouter.ai/api/v1"
-openai.api_key = st.secrets["openai"]["api_key"] if "openai" in st.secrets else "sk-your-key-here"
+from openai import OpenAI
+client = OpenAI(api_key=st.secrets["openai"]["openai_api_key"])
 
 st.set_page_config(page_title="AI Dashboard", layout="wide")
 
@@ -73,66 +71,65 @@ with tabs[3]:  # Contract Parsing Tab
 
     topic = st.selectbox("Choose a contract topic to analyze:", list(topic_keywords.keys()))
 
-    if uploaded_contract:
-        with fitz.open(stream=uploaded_contract.read(), filetype="pdf") as doc:
-            full_text = "\n".join([page.get_text() for page in doc])
+if uploaded_contract:
+    with fitz.open(stream=uploaded_contract.read(), filetype="pdf") as doc:
+        full_text = "\n".join([page.get_text() for page in doc])
 
-        # Match scoring with topic-specific tuning
-        keywords = topic_keywords[topic]
-        lowered_topic = topic.lower()
+    # Split into chunks
+    chunks = re.split(r'\n(?=\d+\.\d+(?:\.\d+)*|ARTICLE \d+|Section \d+)', full_text)
+    chunks = [c.strip() for c in chunks if len(c.strip()) > 50]
 
-        # Optional: tighten noisy matches for specific topics
-        safety_exclusions = [
-            "decorative", "design-build provisions", "scope of amenities", "contract sum", "unit prices"
-        ]
-        
-        chunks = re.split(r'\n(?=\d+\.\d+(?:\.\d+)*|ARTICLE \d+|Section \d+)', full_text)
-        chunks = [c.strip() for c in chunks if len(c.strip()) > 50]
+    keywords = topic_keywords[topic]
 
-        matches = []
-        for chunk in chunks:
-            lowered = chunk.lower()
-            match_score = sum(kw in lowered for kw in keywords)
-    
-            # Refine logic for Safety Requirements only
-            if topic == "Safety Requirements":
-                has_exclusion = any(ex_kw in lowered for ex_kw in safety_exclusions)
-                if match_score >= 2 and not has_exclusion:
-                    matches.append(chunk.strip())
-            else:
-                if match_score > 0:
-                    matches.append(chunk.strip())
+    # Optional: tighten noisy matches for specific topics
+    safety_exclusions = ["decorative", "design-build provisions", "scope of amenities", "contract sum", "unit prices"]
 
-        # Show matches
-        if matches:
-            st.markdown(f"### 🔍 Found {len(matches)} section(s) related to **{topic}**:")
-            for idx, section in enumerate(matches):
-                with st.expander(f"Match {idx + 1}"):
-                    st.markdown(f"<div style='overflow-x: auto; white-space: pre-wrap;'>{section}</div>", unsafe_allow_html=True)
+    matches = []
+    for chunk in chunks:
+        lowered = chunk.lower()
+        match_score = sum(kw in lowered for kw in keywords)
 
-            if st.button("Summarize All Matches with AI"):
-                with st.spinner("Contacting OpenRouter..."):
-                    combined_text = "\n\n".join(matches[:3])
-                    prompt = f"""
+        if topic == "Safety Requirements":
+            if match_score >= 2 and not any(ex_kw in lowered for ex_kw in safety_exclusions):
+                matches.append(chunk.strip())
+        else:
+            if match_score > 0:
+                matches.append(chunk.strip())
+
+    if matches:
+        st.markdown(f"### 🔍 Found {len(matches)} section(s) related to **{topic}**:")
+        for idx, section in enumerate(matches):
+            with st.expander(f"Match {idx + 1}"):
+                st.markdown(f"<div style='overflow-x: auto; white-space: pre-wrap;'>{section}</div>", unsafe_allow_html=True)
+
+        if st.button("Summarize All Matches with AI"):
+            with st.spinner("Contacting OpenAI..."):
+                combined_text = "\n\n".join(matches[:3])
+                prompt = f"""
 You are a contract analysis assistant. Summarize the following section(s) from a contract related to:
 **{topic}**
 
+Only summarize sections related to the topic. Use bullet points if needed.
+
 Section Text:
+\"\"\"
 {combined_text}
+\"\"\"
 """
-                    response = openai.ChatCompletion.create(
-                        model="openchat/openchat-3.5-0106",
-                        messages=[
-                            {"role": "system", "content": "You summarize and extract details from contracts."},
-                            {"role": "user", "content": prompt}
-                        ],
-                        temperature=0.4
-                    )
-                    summary = response.choices[0].message.content
-                    st.markdown("### 🤖 AI Summary")
-                    st.write(summary)
-        else:
-            st.warning(f"No relevant sections found for **{topic}**.")
+                response = client.chat.completions.create(
+                    model="gpt-4",
+                    messages=[
+                        {"role": "system", "content": "You summarize and extract details from contracts for project managers."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.4
+                )
+
+                summary = response.choices[0].message.content
+                st.markdown("### 🤖 AI Summary")
+                st.write(summary)
+    else:
+        st.warning(f"No relevant sections found for **{topic}**.")
 
 with tabs[4]:
     st.info("🚧 Stay tuned for more tools here!")

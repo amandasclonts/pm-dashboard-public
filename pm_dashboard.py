@@ -77,13 +77,6 @@ with tabs[3]:  # Contract Parsing Tab
         with fitz.open(stream=uploaded_contract.read(), filetype="pdf") as doc:
             full_text = "\n".join([page.get_text() for page in doc])
 
-        st.text(full_text[:1000])  # Show the first 1000 characters of the PDF
-
-       # Split by double newlines to preserve paragraphs/sections
-        chunks = re.split(r'\n(?=\d+\.\d+(?:\.\d+)*|ARTICLE \d+|Section \d+)', full_text)
-        chunks = [c.strip() for c in chunks if len(c.strip()) > 50]
-
-
         # Match scoring with topic-specific tuning
         keywords = topic_keywords[topic]
         lowered_topic = topic.lower()

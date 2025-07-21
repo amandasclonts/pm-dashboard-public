@@ -85,6 +85,9 @@ with tabs[3]:  # Contract Parsing Tab
         safety_exclusions = [
             "decorative", "design-build provisions", "scope of amenities", "contract sum", "unit prices"
         ]
+        
+        chunks = re.split(r'\n(?=\d+\.\d+(?:\.\d+)*|ARTICLE \d+|Section \d+)', full_text)
+        chunks = [c.strip() for c in chunks if len(c.strip()) > 50]
 
         matches = []
         for chunk in chunks:

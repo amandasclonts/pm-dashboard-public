@@ -131,7 +131,7 @@ Contract Section:
 {combined_text}
 \"\"\"
 """
-                    response = client.chat.completions.create(
+                response = client.chat.completions.create(
                     model="gpt-4",
                     messages=[
                         {"role": "system", "content": "You summarize and extract details from contracts for project managers."},

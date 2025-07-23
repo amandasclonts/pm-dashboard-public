@@ -107,16 +107,31 @@ if uploaded_contract:
             with st.spinner("Contacting OpenAI..."):
                 combined_text = "\n\n".join(matches[:3])[:8000] #roughly 2,000 tokens
                 prompt = f"""
-You are a contract analysis assistant. Summarize the following section(s) from a contract related to:
-**{topic}**
+You are a contract analysis assistant. Review the text below and extract details for **each of the following contract topics**:
 
-Only summarize sections related to the topic. Use bullet points if needed.
+- Liquidated Damages
+- Payment Terms
+- Delays
+- Retention
+- Schedule
+- Scope of Work
+- Contract Value
+- Safety Requirements
+
+For each topic, return:
+
+**Topic Name**:  
+- Bullet point(s) summarizing what the contract says about this topic  
+- If the topic is not mentioned or unclear, say "Not Found"
+
+Only include information from the text. Be accurate and concise.
 
 Section Text:
 \"\"\"
 {combined_text}
 \"\"\"
 """
+
                 response = client.chat.completions.create(
                     model="gpt-4",
                     messages=[

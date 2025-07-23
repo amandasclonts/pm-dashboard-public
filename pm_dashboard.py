@@ -107,32 +107,31 @@ if uploaded_contract:
             with st.spinner("Contacting OpenAI..."):
                 combined_text = "\n\n".join(matches[:3])[:8000] #roughly 2,000 tokens
                 prompt = f"""
-You are a contract analysis assistant. Review the text below and extract details for **each of the following contract topics**:
+You are a contract analysis assistant. Carefully review the contract text and extract relevant information for the following topics. Each topic includes example keywords to help guide your extraction. Return your results in the following format:
 
-- Liquidated Damages
-- Payment Terms
-- Delays
-- Retention
-- Schedule
-- Scope of Work
-- Contract Value
-- Safety Requirements
+**Topic**  
+- What the contract says (summarized in bullet points)
+- If nothing relevant is found, write "Not Found"
 
-For each topic, return:
+Topics and example keywords:
 
-**Topic Name**:  
-- Bullet point(s) summarizing what the contract says about this topic  
-- If the topic is not mentioned or unclear, say "Not Found"
+1. **Contract Value** – contract value, contract price, subcontract price, agreement amount, total compensation  
+2. **Payment Terms** – invoice, payment schedule, net 30, progress payments, pay application  
+3. **Liquidated Damages** – penalty, late delivery, delay fee, damages, liquidated damages  
+4. **Delays** – delay, extension of time, weather delay, force majeure, project delay  
+5. **Retention** – retainage, withheld, 10%, retention, retainage percentage  
+6. **Schedule** – project schedule, timeline, completion date, milestone  
+7. **Scope of Work** – scope of work, services include, subcontract work, description of work  
+8. **Safety Requirements** – OSHA, PPE, site safety, safety plan, injury prevention  
 
-Only include information from the text. Be accurate and concise.
+Only include information supported directly by the contract text.
 
-Section Text:
+Contract Section:
 \"\"\"
 {combined_text}
 \"\"\"
 """
-
-                response = client.chat.completions.create(
+                  response = client.chat.completions.create(
                     model="gpt-4",
                     messages=[
                         {"role": "system", "content": "You summarize and extract details from contracts for project managers."},

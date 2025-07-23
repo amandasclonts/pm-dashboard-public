@@ -105,7 +105,7 @@ if uploaded_contract:
 
         if st.button("Summarize All Matches with AI"):
             with st.spinner("Contacting OpenAI..."):
-                combined_text = "\n\n".join(matches[:3])
+                combined_text = "\n\n".join(matches[:3])[:8000] #roughly 2,000 tokens
                 prompt = f"""
 You are a contract analysis assistant. Summarize the following section(s) from a contract related to:
 **{topic}**
@@ -123,7 +123,8 @@ Section Text:
                         {"role": "system", "content": "You summarize and extract details from contracts for project managers."},
                         {"role": "user", "content": prompt}
                     ],
-                    temperature=0.4
+                    temperature=0.4,
+                    max_tokens=500
                 )
 
                 summary = response.choices[0].message.content

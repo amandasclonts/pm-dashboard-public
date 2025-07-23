@@ -6,7 +6,8 @@ import fitz  # PyMuPDF
 import pandas as pd
 
 from openai import OpenAI
-client = OpenAI(api_key=st.secrets["openai"]["openai_api_key"])
+openai_api_key = st.secrets["OPENAI_API_KEY"]
+client = OpenAI(api_key=openai_api_key)
 
 st.set_page_config(page_title="AI Dashboard", layout="wide")
 

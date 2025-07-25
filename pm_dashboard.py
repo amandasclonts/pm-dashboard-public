@@ -107,30 +107,36 @@ if uploaded_contract:
             with st.spinner("Contacting OpenAI..."):
                 combined_text = "\n\n".join(matches[:3])[:8000] #roughly 2,000 tokens
                 prompt = f"""
-You are a contract analysis assistant. Carefully review the contract text and extract relevant information for the following topics. Each topic includes example keywords to help guide your extraction. Return your results in the following format:
+You are a contract analysis assistant. Review the following contract text and extract details for each of these topics:
 
-**Topic**  
-- What the contract says (summarized in bullet points)
-- If nothing relevant is found, write "Not Found"
+1. Contract Value
+2. Payment Terms
+3. Liquidated Damages
+4. Delays
+5. Retention
+6. Schedule
+7. Scope of Work
+8. Safety Requirements
 
-Topics and example keywords:
+For each topic:
+- ✅ Say "Not Found" if there is no relevant section.
+- 📄 If found, provide a short bullet-point summary AND the page number (from the text provided if possible).
 
-1. **Contract Value** – contract value, contract price, subcontract price, agreement amount, total compensation  
-2. **Payment Terms** – invoice, payment schedule, net 30, progress payments, pay application  
-3. **Liquidated Damages** – penalty, late delivery, delay fee, damages, liquidated damages  
-4. **Delays** – delay, extension of time, weather delay, force majeure, project delay  
-5. **Retention** – retainage, withheld, 10%, retention, retainage percentage  
-6. **Schedule** – project schedule, timeline, completion date, milestone  
-7. **Scope of Work** – scope of work, services include, subcontract work, description of work  
-8. **Safety Requirements** – OSHA, PPE, site safety, safety plan, injury prevention  
-
-Only include information supported directly by the contract text.
-
-Contract Section:
+Here is the contract text (split into chunks, may not contain all pages at once):
 \"\"\"
 {combined_text}
 \"\"\"
+Only output in this structure:
+
+**Contract Value** (Page #):
+- Details...
+
+**Payment Terms** (Page #):
+- Details...
+
+...and so on for each topic.
 """
+
                 response = client.chat.completions.create(
                     model="gpt-4",
                     messages=[

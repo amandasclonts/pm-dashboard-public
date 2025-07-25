@@ -72,41 +72,48 @@ with tabs[3]:  # Contract Parsing Tab
 
     topic = st.selectbox("Choose a contract topic to analyze:", list(topic_keywords.keys()))
 
-if uploaded_contract:
-    with fitz.open(stream=uploaded_contract.read(), filetype="pdf") as doc:
-        full_text = "\n".join([page.get_text() for page in doc])
+    if uploaded_contract:
+        # Extract text chunks with page numbers
+        text_chunks = []
+        with fitz.open(stream=uploaded_contract.read(), filetype="pdf") as doc:
+            for page_num, page in enumerate(doc, start=1):
+                text = page.get_text()
+                parts = re.split(r'\n(?=\d+\.\d+(?:\.\d+)*|ARTICLE \d+|Section \d+)', text)
+                for part in parts:
+                    if len(part.strip()) > 50:
+                        text_chunks.append({"text": part.strip(), "page": page_num})
 
-    # Split into chunks
-    chunks = re.split(r'\n(?=\d+\.\d+(?:\.\d+)*|ARTICLE \d+|Section \d+)', full_text)
-    chunks = [c.strip() for c in chunks if len(c.strip()) > 50]
+        keywords = topic_keywords[topic]
+        safety_exclusions = ["decorative", "design-build provisions", "scope of amenities", "contract sum", "unit prices"]
 
-    keywords = topic_keywords[topic]
+        # Find matches
+        matches = []
+        for chunk in text_chunks:
+            lowered = chunk["text"].lower()
+            match_score = sum(kw in lowered for kw in keywords)
 
-    # Optional: tighten noisy matches for specific topics
-    safety_exclusions = ["decorative", "design-build provisions", "scope of amenities", "contract sum", "unit prices"]
+            if topic == "Safety Requirements":
+                if match_score >= 2 and not any(ex_kw in lowered for ex_kw in safety_exclusions):
+                    matches.append(chunk)
+            else:
+                if match_score > 0:
+                    matches.append(chunk)
 
-    matches = []
-    for chunk in chunks:
-        lowered = chunk.lower()
-        match_score = sum(kw in lowered for kw in keywords)
+        # Show matches
+        if matches:
+            st.markdown(f"### 🔍 Found {len(matches)} section(s) related to **{topic}**:")
+            for idx, section in enumerate(matches):
+                with st.expander(f"Match {idx + 1} (Page {section['page']})"):
+                    st.markdown(f"<div style='overflow-x: auto; white-space: pre-wrap;'>{section['text']}</div>", unsafe_allow_html=True)
 
-        if topic == "Safety Requirements":
-            if match_score >= 2 and not any(ex_kw in lowered for ex_kw in safety_exclusions):
-                matches.append(chunk.strip())
-        else:
-            if match_score > 0:
-                matches.append(chunk.strip())
+            # Summarize with AI
+            if st.button("Summarize All Matches with AI"):
+                with st.spinner("Contacting OpenAI..."):
+                    combined_text = "\n\n".join(
+                        f"[Page {c['page']}] {c['text']}" for c in matches[:3]
+                    )[:8000]  # Limit to ~2000 tokens
 
-    if matches:
-        st.markdown(f"### 🔍 Found {len(matches)} section(s) related to **{topic}**:")
-        for idx, section in enumerate(matches):
-            with st.expander(f"Match {idx + 1}"):
-                st.markdown(f"<div style='overflow-x: auto; white-space: pre-wrap;'>{section}</div>", unsafe_allow_html=True)
-
-        if st.button("Summarize All Matches with AI"):
-            with st.spinner("Contacting OpenAI..."):
-                combined_text = "\n\n".join(matches[:3])[:8000] #roughly 2,000 tokens
-                prompt = f"""
+                    prompt = f"""
 You are a contract analysis assistant. Review the following contract text and extract details for each of these topics:
 
 1. Contract Value
@@ -137,21 +144,21 @@ Only output in this structure:
 ...and so on for each topic.
 """
 
-                response = client.chat.completions.create(
-                    model="gpt-4",
-                    messages=[
-                        {"role": "system", "content": "You summarize and extract details from contracts for project managers."},
-                        {"role": "user", "content": prompt}
-                    ],
-                    temperature=0.4,
-                    max_tokens=500
-                )
+                    response = client.chat.completions.create(
+                        model="gpt-4",
+                        messages=[
+                            {"role": "system", "content": "You summarize and extract details from contracts for project managers."},
+                            {"role": "user", "content": prompt}
+                        ],
+                        temperature=0.4,
+                        max_tokens=600
+                    )
 
-                summary = response.choices[0].message.content
-                st.markdown("### 🤖 AI Summary")
-                st.write(summary)
-    else:
-        st.warning(f"No relevant sections found for **{topic}**.")
+                    summary = response.choices[0].message.content
+                    st.markdown("### 🤖 AI Summary")
+                    st.write(summary)
+        else:
+            st.warning(f"No relevant sections found for **{topic}**.")
 
 with tabs[4]:
     st.info("🚧 Stay tuned for more tools here!")

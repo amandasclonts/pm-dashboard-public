@@ -83,10 +83,10 @@ with tabs[3]:  # Contract Parsing Tab
                     if len(part.strip()) > 50:
                         text_chunks.append({"text": part.strip(), "page": page_num})
 
+        # Filter matches for selected topic
         keywords = topic_keywords[topic]
         safety_exclusions = ["decorative", "design-build provisions", "scope of amenities", "contract sum", "unit prices"]
 
-        # Find matches
         matches = []
         for chunk in text_chunks:
             lowered = chunk["text"].lower()
@@ -106,14 +106,14 @@ with tabs[3]:  # Contract Parsing Tab
                 with st.expander(f"Match {idx + 1} (Page {section['page']})"):
                     st.markdown(f"<div style='overflow-x: auto; white-space: pre-wrap;'>{section['text']}</div>", unsafe_allow_html=True)
 
-            # Summarize with AI
-            if st.button("Summarize All Matches with AI"):
-                with st.spinner("Contacting OpenAI..."):
-                    combined_text = "\n\n".join(
-                        f"[Page {c['page']}] {c['text']}" for c in matches[:3]
-                    )[:8000]  # Limit to ~2000 tokens
+        # AI Summary for ALL 8 topics
+        if st.button("🔍 Full Contract Analysis with AI"):
+            with st.spinner("Contacting OpenAI..."):
+                combined_text = "\n\n".join(
+                    f"[Page {c['page']}] {c['text']}" for c in text_chunks
+                )[:8000]  # Limit to avoid token errors
 
-                    prompt = f"""
+                prompt = f"""
 You are a contract analysis assistant. Review the following contract text and extract details for each of these topics:
 
 1. Contract Value
@@ -127,13 +127,14 @@ You are a contract analysis assistant. Review the following contract text and ex
 
 For each topic:
 - ✅ Say "Not Found" if there is no relevant section.
-- 📄 If found, provide a short bullet-point summary AND the page number (from the text provided if possible).
+- 📄 If found, provide a short bullet-point summary AND include the page number (from the text provided if possible).
 
 Here is the contract text (split into chunks, may not contain all pages at once):
+\"\"\" 
+{combined_text} 
 \"\"\"
-{combined_text}
-\"\"\"
-Only output in this structure:
+
+Return ONLY in this format:
 
 **Contract Value** (Page #):
 - Details...
@@ -144,20 +145,21 @@ Only output in this structure:
 ...and so on for each topic.
 """
 
-                    response = client.chat.completions.create(
-                        model="gpt-4",
-                        messages=[
-                            {"role": "system", "content": "You summarize and extract details from contracts for project managers."},
-                            {"role": "user", "content": prompt}
-                        ],
-                        temperature=0.4,
-                        max_tokens=600
-                    )
+                response = client.chat.completions.create(
+                    model="gpt-4",
+                    messages=[
+                        {"role": "system", "content": "You summarize and extract details from contracts for project managers."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.4,
+                    max_tokens=700
+                )
 
-                    summary = response.choices[0].message.content
-                    st.markdown("### 🤖 AI Summary")
-                    st.write(summary)
-        else:
+                summary = response.choices[0].message.content
+                st.markdown("### 🤖 AI Full Summary")
+                st.write(summary)
+
+        elif not matches:
             st.warning(f"No relevant sections found for **{topic}**.")
 
 with tabs[4]:

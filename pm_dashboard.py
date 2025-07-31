@@ -52,26 +52,31 @@ tabs = st.tabs(["Forecast AI", "Compliance Checker", "Summarizer", "Contract Par
 with tabs[1]:  # Compliance Checker Tab
     st.subheader("📋 Civil Plan Compliance Checker")
 
-
-
 with tabs[3]:  # Contract Parsing Tab
     st.subheader("📂 Contract Parsing – Section Lookup (AI Mode)")
 
     uploaded_contract = st.file_uploader("Upload a contract PDF", type=["pdf"])
 
+    # Define keywords for all topics
     topic_keywords = {
+        "Contract Value": ["contract price", "contract value", "contract sum", "compensation",
+                           "subcontract price", "subcontract amount", "total compensation", "base bid",
+                           "contract amount", "zero dollars", "agrees to pay subcontractor", "shall pay to subcontractor", "contract total"],
+        "Payment Terms": ["payment terms", "invoice", "progress payments", "final payment", "paid by owner",
+                          "schedule of values", "payment application"],
         "Liquidated Damages": ["liquidated damages", "penalty", "late delivery", "delay damages"],
-        "Payment Terms": ["payment terms", "invoice", "progress payments", "final payment", "paid by owner", "schedule of values", "payment application"],
-        "Delays": ["delay", "extension of time", "force majeure", "project delay", "weather delay", "time is of the essence"],
+        "Delays": ["delay", "extension of time", "force majeure", "project delay", "weather delay",
+                   "time is of the essence"],
         "Retention": ["retainage", "retained", "withheld", "10%", "retention", "retainage percentage"],
         "Schedule": ["completion date", "timeline", "project schedule", "construction timeline", "milestone"],
         "Scope of Work": ["scope of work", "subcontract work", "services include", "work to be performed"],
-        "Contract Value": ["contract price", "contract value", "contract sum", "compensation", "subcontract price", "subcontract amount", "total compensation", "base bid", "contract amount", "zero dollars", "agrees to pay subcontractor", "shall pay to subcontractor", "contract total"],
         "Safety Requirements": ["safety", "osha", "ppe", "site safety", "safety program", "injury prevention"],
-        "Other Keywords": ["ocip", "ccip", "textura", "procore", "bond"]  # ✅ New search terms
+        "CCIP": ["ccip"],
+        "OCIP": ["ocip"],
+        "Bond": ["bond", "surety bond", "performance bond", "payment bond"],
+        "Textura": ["textura"],
+        "Procore": ["procore"]
     }
-
-    topic = st.selectbox("Choose a contract topic to analyze:", list(topic_keywords.keys()))
 
     if uploaded_contract:
         # Extract text chunks with page numbers
@@ -84,11 +89,10 @@ with tabs[3]:  # Contract Parsing Tab
                     if len(part.strip()) > 50:
                         text_chunks.append({"text": part.strip(), "page": page_num})
 
-        # Filter matches for selected topic
+        # ✅ Show matches for selected topic
+        topic = st.selectbox("Choose a contract topic to analyze:", list(topic_keywords.keys()))
         keywords = topic_keywords[topic]
         safety_exclusions = ["decorative", "design-build provisions", "scope of amenities", "contract sum", "unit prices"]
-
-        import re
 
         def keyword_found(text, keywords):
             return any(re.search(rf"\b{re.escape(kw)}\b", text, re.IGNORECASE) for kw in keywords)
@@ -96,34 +100,29 @@ with tabs[3]:  # Contract Parsing Tab
         matches = []
         for chunk in text_chunks:
             match_score = sum(keyword_found(chunk["text"], [kw]) for kw in keywords)
-
             if topic == "Safety Requirements":
                 if match_score >= 2 and not any(ex_kw in chunk["text"].lower() for ex_kw in safety_exclusions):
                     matches.append(chunk)
-            else:
-                if match_score > 0:
-                    matches.append(chunk)
+            elif match_score > 0:
+                matches.append(chunk)
 
-            if topic == "Safety Requirements":
-                if match_score >= 2 and not any(ex_kw in lowered for ex_kw in safety_exclusions):
-                    matches.append(chunk)
-            else:
-                if match_score > 0:
-                    matches.append(chunk)
-
-        # Show matches
         if matches:
             st.markdown(f"### 🔍 Found {len(matches)} section(s) related to **{topic}**:")
             for idx, section in enumerate(matches):
                 with st.expander(f"Match {idx + 1} (Page {section['page']})"):
-                    st.markdown(f"<div style='overflow-x: auto; white-space: pre-wrap;'>{section['text']}</div>", unsafe_allow_html=True)
+                    st.markdown(
+                        f"<div style='overflow-x: auto; white-space: pre-wrap;'>{section['text']}</div>",
+                        unsafe_allow_html=True,
+                    )
+        else:
+            st.warning(f"No relevant sections found for **{topic}**.")
 
-        # AI Summary for ALL 8 topics
+        # ✅ Full AI Contract Analysis (ALL Topics)
         if st.button("🔍 Full Contract Analysis with AI"):
             with st.spinner("Contacting OpenAI..."):
                 combined_text = "\n\n".join(
                     f"[Page {c['page']}] {c['text']}" for c in text_chunks
-                )[:8000]  # Limit to avoid token errors
+                )[:8000]  # Limit text to avoid token errors
 
                 prompt = f"""
 You are a contract analysis assistant. Review the following contract text and extract details for each of these topics:
@@ -136,18 +135,22 @@ You are a contract analysis assistant. Review the following contract text and ex
 6. Schedule
 7. Scope of Work
 8. Safety Requirements
-9. Other Keywords (OCIP, CCIP, Textura, Procore, Bond)
+9. CCIP
+10. OCIP
+11. Bond
+12. Textura
+13. Procore
 
 For each topic:
-- ✅ Say "Not Found" if there is no relevant section.
-- 📄 If found, provide a short bullet-point summary AND include the page number (from the text provided if possible).
+- ✅ If found, give a short bullet-point summary AND the page number.
+- ❌ If not found, write "Not Found".
 
-Here is the contract text (split into chunks, may not contain all pages at once):
-\"\"\" 
-{combined_text} 
+Contract Text:
+\"\"\"
+{combined_text}
 \"\"\"
 
-Return ONLY in this format:
+Output ONLY in this format:
 
 **Contract Value** (Page #):
 - Details...
@@ -155,28 +158,23 @@ Return ONLY in this format:
 **Payment Terms** (Page #):
 - Details...
 
-**Other Keywords** (Page #):
-- Details...
-
-...and so on for each topic.
+...continue for all topics in order.
 """
 
                 response = client.chat.completions.create(
                     model="gpt-4",
                     messages=[
                         {"role": "system", "content": "You summarize and extract details from contracts for project managers."},
-                        {"role": "user", "content": prompt}
+                        {"role": "user", "content": prompt},
                     ],
                     temperature=0.4,
-                    max_tokens=700
+                    max_tokens=900,
                 )
 
                 summary = response.choices[0].message.content
                 st.markdown("### 🤖 AI Full Summary")
                 st.write(summary)
 
-        elif not matches:
-            st.warning(f"No relevant sections found for **{topic}**.")
 
 with tabs[4]:
     st.info("🚧 Stay tuned for more tools here!")

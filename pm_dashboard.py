@@ -68,6 +68,7 @@ with tabs[3]:  # Contract Parsing Tab
         "Scope of Work": ["scope of work", "subcontract work", "services include", "work to be performed"],
         "Contract Value": ["contract price", "contract value", "contract sum", "compensation", "subcontract price", "subcontract amount", "total compensation", "base bid", "contract amount", "zero dollars", "agrees to pay subcontractor", "shall pay to subcontractor", "contract total"],
         "Safety Requirements": ["safety", "osha", "ppe", "site safety", "safety program", "injury prevention"]
+        "Other Keywords": ["ocip", "ccip", "textura", "procore", "bond"]  # ✅ New search terms
     }
 
     topic = st.selectbox("Choose a contract topic to analyze:", list(topic_keywords.keys()))

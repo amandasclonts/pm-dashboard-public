@@ -52,89 +52,93 @@ tabs = st.tabs(["Forecast AI", "Compliance Checker", "Summarizer", "Contract Par
 with tabs[1]:  # Compliance Checker Tab
     st.subheader("📋 Civil Plan Compliance Checker")
 
-with tabs[3]:  # Contract Parsing Tab
-    st.subheader("📂 Contract Parsing – Section Lookup (AI Mode)")
+with tabs[3]:
+    st.subheader("📂 Contract Parsing – AI Optimized Lookup")
 
     uploaded_contract = st.file_uploader("Upload a contract PDF", type=["pdf"])
 
+    topic_keywords = {
+        "Contract Value": ["contract price", "contract value", "contract sum", "compensation", "subcontract price", "subcontract amount", "total compensation", "base bid", "contract amount", "agrees to pay subcontractor", "shall pay to subcontractor"],
+        "Payment Terms": ["payment terms", "invoice", "progress payments", "final payment", "paid by owner", "schedule of values", "payment application"],
+        "Liquidated Damages": ["liquidated damages", "penalty", "late delivery", "delay damages"],
+        "Delays": ["delay", "extension of time", "force majeure", "project delay", "time is of the essence"],
+        "Retention": ["retainage", "retained", "withheld", "10%", "retention", "retainage percentage"],
+        "Schedule": ["completion date", "timeline", "project schedule", "construction timeline", "milestone"],
+        "Scope of Work": ["scope of work", "subcontract work", "services include", "work to be performed"],
+        "Safety Requirements": ["safety", "osha", "ppe", "site safety", "safety program", "injury prevention"],
+        "CCIP": ["ccip", "contractor controlled insurance program"],
+        "OCIP": ["ocip", "owner controlled insurance program"],
+        "Bond": ["bond", "surety bond", "performance bond", "payment bond"],
+        "Textura": ["textura"],
+        "Procore": ["procore"]
+    }
+
     if uploaded_contract:
-        # Extract text chunks with page numbers
-        text_chunks = []
-        with fitz.open(stream=uploaded_contract.read(), filetype="pdf") as doc:
-            for page_num, page in enumerate(doc, start=1):
-                text = page.get_text()
-                if text.strip():
-                    text_chunks.append({"text": text.strip(), "page": page_num})
+        import re
+        import fitz
 
-        # Combine all text for batching
-        all_text = ""
-        for c in text_chunks:
-            all_text += f"[Page {c['page']}] {c['text']}\n\n"
+        # Extract PDF text by page
+        doc = fitz.open(stream=uploaded_contract.read(), filetype="pdf")
+        page_texts = []
+        for i, page in enumerate(doc, start=1):
+            text = page.get_text("text")
+            page_texts.append({"page": i, "text": text})
 
-        # Split into batches of ~6000 characters to avoid token errors
-        batch_size = 6000
-        batches = [all_text[i:i+batch_size] for i in range(0, len(all_text), batch_size)]
+        # Detect relevant pages based on keywords
+        relevant_pages = []
+        for page in page_texts:
+            lowered = page["text"].lower()
+            if any(kw in lowered for kws in topic_keywords.values() for kw in kws):
+                relevant_pages.append(page)
 
-        topics = [
-            "Contract Value", "Payment Terms", "Liquidated Damages", "Delays",
-            "Retention", "Schedule", "Scope of Work", "Safety Requirements",
-            "CCIP", "OCIP", "Bond", "Textura", "Procore"
-        ]
+        if not relevant_pages:
+            st.warning("No relevant pages found for analysis.")
+        else:
+            # Button to run AI analysis
+            if st.button("🔍 AI Full Contract Summary (Optimized)"):
+                combined_text = "\n\n".join([f"[Page {p['page']}] {p['text']}" for p in relevant_pages])
+                combined_text = combined_text[:12000]  # Hard limit to reduce tokens
 
-        final_results = {topic: [] for topic in topics}
-
-        # Process each batch and collect results
-        for idx, batch in enumerate(batches, start=1):
-            with st.spinner(f"Analyzing batch {idx}/{len(batches)}..."):
                 prompt = f"""
-You are a contract analysis assistant. Extract details for each of these topics:
+You are a contract analysis assistant. Using ONLY the text below, summarize details for these topics:
 
-{', '.join(topics)}
+Contract Value, Payment Terms, Liquidated Damages, Delays, Retention, Schedule, Scope of Work,
+Safety Requirements, CCIP, OCIP, Bond, Textura, Procore.
 
-Rules:
-- Include page numbers if available (from [Page X] in the text).
-- If nothing is found for a topic in this batch, just say "Not Found" for that topic.
-- Return results ONLY in this JSON format (no extra text):
+For each topic:
+- If found, give up to 3 short bullet points with page numbers.
+- If not found, just write "Not Found" (do NOT list multiple 'Not Found' messages).
 
-{{
-  "Contract Value": ["...details... (Page X)"],
-  "Payment Terms": ["...details... (Page X)"],
-  ...
-}}
-Text to analyze:
+Contract text:
 \"\"\"
-{batch}
+{combined_text}
 \"\"\"
+
+Return in this format:
+
+**Contract Value (Page #)**  
+- Bullet 1  
+- Bullet 2  
+
+**Payment Terms (Page #)**  
+- Bullet 1  
+
+...and so on.
                 """
-                response = client.chat.completions.create(
-                    model="gpt-4",
-                    messages=[
-                        {"role": "system", "content": "You extract structured data from contracts for project managers."},
-                        {"role": "user", "content": prompt}
-                    ],
-                    temperature=0,
-                    max_tokens=800
-                )
 
-                import json
-                try:
-                    batch_data = json.loads(response.choices[0].message.content)
-                    for topic in topics:
-                        if topic in batch_data and batch_data[topic] != "Not Found":
-                            final_results[topic].extend(batch_data[topic])
-                except:
-                    st.error(f"⚠️ Failed to parse batch {idx} response")
+                with st.spinner("Analyzing contract..."):
+                    response = client.chat.completions.create(
+                        model="gpt-4o-mini",  # cheaper model but still good
+                        messages=[
+                            {"role": "system", "content": "You are an AI that summarizes contracts for project managers."},
+                            {"role": "user", "content": prompt}
+                        ],
+                        max_tokens=900,
+                        temperature=0.3
+                    )
 
-        # Show final combined summary
-        st.markdown("### 🤖 AI Combined Contract Summary")
-        for topic in topics:
-            if final_results[topic]:
-                st.markdown(f"**{topic}:**")
-                for item in final_results[topic]:
-                    st.markdown(f"- {item}")
-            else:
-                st.markdown(f"**{topic}:** Not Found")
-
+                st.markdown("### 🤖 AI Contract Summary")
+                st.write(response.choices[0].message.content)
 
 
 with tabs[4]:

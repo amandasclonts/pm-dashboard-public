@@ -88,10 +88,21 @@ with tabs[3]:  # Contract Parsing Tab
         keywords = topic_keywords[topic]
         safety_exclusions = ["decorative", "design-build provisions", "scope of amenities", "contract sum", "unit prices"]
 
+        import re
+
+        def keyword_found(text, keywords):
+            return any(re.search(rf"\b{re.escape(kw)}\b", text, re.IGNORECASE) for kw in keywords)
+
         matches = []
         for chunk in text_chunks:
-            lowered = chunk["text"].lower()
-            match_score = sum(kw in lowered for kw in keywords)
+            match_score = sum(keyword_found(chunk["text"], [kw]) for kw in keywords)
+
+            if topic == "Safety Requirements":
+                if match_score >= 2 and not any(ex_kw in chunk["text"].lower() for ex_kw in safety_exclusions):
+                    matches.append(chunk)
+            else:
+                if match_score > 0:
+                    matches.append(chunk)
 
             if topic == "Safety Requirements":
                 if match_score >= 2 and not any(ex_kw in lowered for ex_kw in safety_exclusions):

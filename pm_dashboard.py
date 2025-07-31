@@ -125,6 +125,7 @@ You are a contract analysis assistant. Review the following contract text and ex
 6. Schedule
 7. Scope of Work
 8. Safety Requirements
+9. Other Keywords (OCIP, CCIP, Textura, Procore, Bond)
 
 For each topic:
 - ✅ Say "Not Found" if there is no relevant section.
@@ -141,6 +142,9 @@ Return ONLY in this format:
 - Details...
 
 **Payment Terms** (Page #):
+- Details...
+
+**Other Keywords** (Page #):
 - Details...
 
 ...and so on for each topic.

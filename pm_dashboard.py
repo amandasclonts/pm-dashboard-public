@@ -57,123 +57,84 @@ with tabs[3]:  # Contract Parsing Tab
 
     uploaded_contract = st.file_uploader("Upload a contract PDF", type=["pdf"])
 
-    topic_keywords = {
-        "Liquidated Damages": ["liquidated damages", "penalty", "late delivery", "delay damages"],
-        "Payment Terms": ["payment terms", "invoice", "progress payments", "final payment", "paid by owner", "schedule of values", "payment application"],
-        "Delays": ["delay", "extension of time", "force majeure", "project delay", "weather delay", "time is of the essence"],
-        "Retention": ["retainage", "retained", "withheld", "10%", "retention", "retainage percentage"],
-        "Schedule": ["completion date", "timeline", "project schedule", "construction timeline", "milestone"],
-        "Scope of Work": ["scope of work", "subcontract work", "services include", "work to be performed"],
-        "Contract Value": ["contract price", "contract value", "contract sum", "compensation", "subcontract price", "subcontract amount", "total compensation", "base bid", "contract amount", "zero dollars", "agrees to pay subcontractor", "shall pay to subcontractor", "contract total"],
-        "Safety Requirements": ["safety", "osha", "ppe", "site safety", "safety program", "injury prevention"],
-        "CCIP": ["ccip"],
-        "OCIP": ["ocip"],
-        "Bond": ["bond", "surety bond", "performance bond", "payment bond"],
-        "Textura": ["textura"],
-        "Procore": ["procore"]
-    }
-
-    topic = st.selectbox("Choose a contract topic to analyze:", list(topic_keywords.keys()))
-
     if uploaded_contract:
         # Extract text chunks with page numbers
         text_chunks = []
         with fitz.open(stream=uploaded_contract.read(), filetype="pdf") as doc:
             for page_num, page in enumerate(doc, start=1):
                 text = page.get_text()
-                parts = re.split(r'\n(?=\d+\.\d+(?:\.\d+)*|ARTICLE \d+|Section \d+)', text)
-                for part in parts:
-                    if len(part.strip()) > 50:
-                        text_chunks.append({"text": part.strip(), "page": page_num})
+                if text.strip():
+                    text_chunks.append({"text": text.strip(), "page": page_num})
 
-        # Find matches for dropdown topic
-        keywords = topic_keywords[topic]
-        safety_exclusions = ["decorative", "design-build provisions", "scope of amenities", "contract sum", "unit prices"]
+        # Combine all text for batching
+        all_text = ""
+        for c in text_chunks:
+            all_text += f"[Page {c['page']}] {c['text']}\n\n"
 
-        def keyword_found(text, keywords):
-            return any(re.search(rf"\b{re.escape(kw)}\b", text, re.IGNORECASE) for kw in keywords)
+        # Split into batches of ~6000 characters to avoid token errors
+        batch_size = 6000
+        batches = [all_text[i:i+batch_size] for i in range(0, len(all_text), batch_size)]
 
-        matches = []
-        for chunk in text_chunks:
-            match_score = sum(keyword_found(chunk["text"], [kw]) for kw in keywords)
+        topics = [
+            "Contract Value", "Payment Terms", "Liquidated Damages", "Delays",
+            "Retention", "Schedule", "Scope of Work", "Safety Requirements",
+            "CCIP", "OCIP", "Bond", "Textura", "Procore"
+        ]
 
-            if topic == "Safety Requirements":
-                if match_score >= 2 and not any(ex_kw in chunk["text"].lower() for ex_kw in safety_exclusions):
-                    matches.append(chunk)
-            else:
-                if match_score > 0:
-                    matches.append(chunk)
+        final_results = {topic: [] for topic in topics}
 
-        # Show matches for selected topic
-        if matches:
-            st.markdown(f"### 🔍 Found {len(matches)} section(s) related to **{topic}**:")
-            for idx, section in enumerate(matches[:3]):  # Show only first 3
-                with st.expander(f"Match {idx+1} (Page {section['page']})"):
-                    st.markdown(f"<div style='white-space: pre-wrap'>{section['text']}</div>", unsafe_allow_html=True)
-        else:
-            st.warning(f"No relevant sections found for **{topic}**.")
+        # Process each batch and collect results
+        for idx, batch in enumerate(batches, start=1):
+            with st.spinner(f"Analyzing batch {idx}/{len(batches)}..."):
+                prompt = f"""
+You are a contract analysis assistant. Extract details for each of these topics:
 
-        # FULL CONTRACT ANALYSIS BUTTON
-        if st.button("🔍 Full Contract Analysis with AI"):
-            with st.spinner("Contacting OpenAI..."):
+{', '.join(topics)}
 
-                # Break the entire contract into batches of ~6000 chars
-                all_batches = []
-                current_batch = ""
-                for c in text_chunks:
-                    chunk_text = f"[Page {c['page']}] {c['text']}\n\n"
-                    if len(current_batch) + len(chunk_text) > 6000:
-                        all_batches.append(current_batch)
-                        current_batch = chunk_text
-                    else:
-                        current_batch += chunk_text
-                if current_batch:
-                    all_batches.append(current_batch)
+Rules:
+- Include page numbers if available (from [Page X] in the text).
+- If nothing is found for a topic in this batch, just say "Not Found" for that topic.
+- Return results ONLY in this JSON format (no extra text):
 
-                full_summary = ""
-
-                for i, batch in enumerate(all_batches):
-                    prompt = f"""
-You are a contract analysis assistant. Review the following contract text and extract details for each of these topics:
-
-1. Contract Value
-2. Payment Terms
-3. Liquidated Damages
-4. Delays
-5. Retention
-6. Schedule
-7. Scope of Work
-8. Safety Requirements
-9. CCIP
-10. OCIP
-11. Bond
-12. Textura
-13. Procore
-
-For each topic:
-- ✅ Say "Not Found" if there is no relevant section.
-- 📄 If found, provide a short bullet-point summary AND include the page number.
-
-Contract Text (Batch {i+1}/{len(all_batches)}):
+{{
+  "Contract Value": ["...details... (Page X)"],
+  "Payment Terms": ["...details... (Page X)"],
+  ...
+}}
+Text to analyze:
 \"\"\"
 {batch}
 \"\"\"
-"""
+                """
+                response = client.chat.completions.create(
+                    model="gpt-4",
+                    messages=[
+                        {"role": "system", "content": "You extract structured data from contracts for project managers."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0,
+                    max_tokens=800
+                )
 
-                    response = client.chat.completions.create(
-                        model="gpt-4",
-                        messages=[
-                            {"role": "system", "content": "You summarize and extract details from contracts for project managers."},
-                            {"role": "user", "content": prompt}
-                        ],
-                        temperature=0.4,
-                        max_tokens=700
-                    )
+                import json
+                try:
+                    batch_data = json.loads(response.choices[0].message.content)
+                    for topic in topics:
+                        if topic in batch_data and batch_data[topic] != "Not Found":
+                            final_results[topic].extend(batch_data[topic])
+                except:
+                    st.error(f"⚠️ Failed to parse batch {idx} response")
 
-                    full_summary += f"\n### 📄 Batch {i+1} Results:\n" + response.choices[0].message.content + "\n"
+        # Show final combined summary
+        st.markdown("### 🤖 AI Combined Contract Summary")
+        for topic in topics:
+            if final_results[topic]:
+                st.markdown(f"**{topic}:**")
+                for item in final_results[topic]:
+                    st.markdown(f"- {item}")
+            else:
+                st.markdown(f"**{topic}:** Not Found")
 
-                st.markdown("### 🤖 AI Full Summary")
-                st.write(full_summary)
 
 
 with tabs[4]:

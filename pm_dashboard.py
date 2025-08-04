@@ -95,7 +95,7 @@ with tabs[3]:
             st.warning("No relevant pages found for analysis.")
         else:
             # Button to run AI analysis
-            if st.button("🔍 AI Full Contract Summary (Optimized)"):
+            if st.button("🔍 AI Full Contract Summary"):
                 combined_text = "\n\n".join([f"[Page {p['page']}] {p['text']}" for p in relevant_pages])
                 combined_text = combined_text[:12000]  # Hard limit to reduce tokens
 
